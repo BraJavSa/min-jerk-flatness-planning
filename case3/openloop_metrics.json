@@ -1,7 +1,7 @@
 {
     "case": "Case 3",
     "solver_type": "CasADi NLP (IPOPT)",
-    "trajectory_solver_time_ms": 1863.437587991939,
+    "trajectory_solver_time_ms": 1816.9326659990475,
     "tracking_error": {
         "rmse_position_m": 0.033710828921450824,
         "max_position_error_m": 0.04966854050698191,

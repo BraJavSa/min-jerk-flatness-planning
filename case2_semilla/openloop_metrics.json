@@ -1,14 +1,14 @@
 {
-    "case": "Case 2",
-    "solver_type": "QP (6-Param Pseudo-Flatness)",
-    "trajectory_solver_time_ms": 255.14064099115785,
+    "case": "Case 2 Semilla",
+    "solver_type": "QP (6-Param Pseudo-Flatness + SQP Seed)",
+    "trajectory_solver_time_ms": 290.0902309920639,
     "tracking_error": {
-        "rmse_position_m": 0.01156474008554744,
-        "max_position_error_m": 0.019019999894693676,
-        "rmse_heading_rad": 0.0011649194994070417,
-        "rmse_heading_deg": 0.0667449707885161,
-        "rmse_surge_u_mps": 0.0006010128311193462,
-        "rmse_sway_v_mps": 6.0110113376204596e-05,
-        "rmse_yaw_rate_r_radps": 0.00016441661187830848
+        "rmse_position_m": 0.020921864927845833,
+        "max_position_error_m": 0.037016624498667966,
+        "rmse_heading_rad": 0.0023600590873202837,
+        "rmse_heading_deg": 0.13522142510494928,
+        "rmse_surge_u_mps": 0.000602356321683926,
+        "rmse_sway_v_mps": 0.00010428467761311198,
+        "rmse_yaw_rate_r_radps": 0.0001976302780861492
     }
 }

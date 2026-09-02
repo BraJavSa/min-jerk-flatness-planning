@@ -1,7 +1,7 @@
 {
     "case": "Case 1",
     "solver_type": "QP (5-Param Model)",
-    "trajectory_solver_time_ms": 124.64138999348506,
+    "trajectory_solver_time_ms": 129.16552899696399,
     "tracking_error": {
         "rmse_position_m": 3.539194739732595,
         "max_position_error_m": 6.561604039329214,

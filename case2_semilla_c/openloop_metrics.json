@@ -1,7 +1,7 @@
 {
-    "case": "Case 2",
+    "case": "Case 2 Semilla (C)",
     "solver_type": "QP (6-Param Pseudo-Flatness) - C port",
-    "trajectory_solver_time_ms": 3.720323,
+    "trajectory_solver_time_ms": 3.765086,
     "tracking_error": {
         "rmse_position_m": 0.020923,
         "max_position_error_m": 0.037017,

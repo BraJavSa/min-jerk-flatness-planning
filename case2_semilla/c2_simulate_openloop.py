@@ -110,8 +110,8 @@ def main():
     rmse_r = float(np.sqrt(np.mean((hist_state_real[:, 5] - nu_ref[:, 2])**2)))
 
     metrics = {
-        "case": "Case 2",
-        "solver_type": "QP (6-Param Pseudo-Flatness)",
+        "case": "Case 2 Semilla",
+        "solver_type": "QP (6-Param Pseudo-Flatness + SQP Seed)",
         "trajectory_solver_time_ms": solve_time_ms,
         "tracking_error": {
             "rmse_position_m": rmse_pos,

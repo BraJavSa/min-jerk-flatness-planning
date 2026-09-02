@@ -143,7 +143,7 @@ int main(void) {
     if (fjson) {
         fprintf(fjson,
             "{\n"
-            "    \"case\": \"Case 2\",\n"
+            "    \"case\": \"Case 2 (C)\",\n"
             "    \"solver_type\": \"QP (6-Param Pseudo-Flatness)\",\n"
             "    \"trajectory_solver_time_ms\": %.6f,\n"
             "    \"tracking_error\": {\n"

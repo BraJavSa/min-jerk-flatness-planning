@@ -164,7 +164,7 @@ int main(void) {
     if (fm) {
         fprintf(fm,
             "{\n"
-            "    \"case\": \"Case 2\",\n"
+            "    \"case\": \"Case 2 Semilla (C)\",\n"
             "    \"solver_type\": \"QP (6-Param Pseudo-Flatness) - C port\",\n"
             "    \"trajectory_solver_time_ms\": %.6f,\n"
             "    \"tracking_error\": {\n"

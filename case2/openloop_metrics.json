@@ -1,7 +1,7 @@
 {
     "case": "Case 2",
     "solver_type": "QP (6-Param Pseudo-Flatness)",
-    "trajectory_solver_time_ms": 255.14064099115785,
+    "trajectory_solver_time_ms": 256.1541100003524,
     "tracking_error": {
         "rmse_position_m": 0.01156474008554744,
         "max_position_error_m": 0.019019999894693676,

@@ -2,7 +2,7 @@
     "case1": {
         "case": "Case 1",
         "solver_type": "QP (5-Param Model)",
-        "trajectory_solver_time_ms": 124.64138999348506,
+        "trajectory_solver_time_ms": 129.16552899696399,
         "tracking_error": {
             "rmse_position_m": 3.539194739732595,
             "max_position_error_m": 6.561604039329214,
@@ -16,7 +16,7 @@
     "case2": {
         "case": "Case 2",
         "solver_type": "QP (6-Param Pseudo-Flatness)",
-        "trajectory_solver_time_ms": 255.14064099115785,
+        "trajectory_solver_time_ms": 256.1541100003524,
         "tracking_error": {
             "rmse_position_m": 0.01156474008554744,
             "max_position_error_m": 0.019019999894693676,
@@ -27,10 +27,52 @@
             "rmse_yaw_rate_r_radps": 0.00016441661187830848
         }
     },
+    "case2_c": {
+        "case": "Case 2 (C)",
+        "solver_type": "QP (6-Param Pseudo-Flatness)",
+        "trajectory_solver_time_ms": 6.346609,
+        "tracking_error": {
+            "rmse_position_m": 0.011565,
+            "max_position_error_m": 0.019022,
+            "rmse_heading_rad": 0.001165,
+            "rmse_heading_deg": 0.066743,
+            "rmse_surge_u_mps": 0.000601,
+            "rmse_sway_v_mps": 6e-05,
+            "rmse_yaw_rate_r_radps": 0.000164
+        }
+    },
+    "case2_semilla": {
+        "case": "Case 2 Semilla",
+        "solver_type": "QP (6-Param Pseudo-Flatness + SQP Seed)",
+        "trajectory_solver_time_ms": 290.0902309920639,
+        "tracking_error": {
+            "rmse_position_m": 0.020921864927845833,
+            "max_position_error_m": 0.037016624498667966,
+            "rmse_heading_rad": 0.0023600590873202837,
+            "rmse_heading_deg": 0.13522142510494928,
+            "rmse_surge_u_mps": 0.000602356321683926,
+            "rmse_sway_v_mps": 0.00010428467761311198,
+            "rmse_yaw_rate_r_radps": 0.0001976302780861492
+        }
+    },
+    "case2_semilla_c": {
+        "case": "Case 2 Semilla (C)",
+        "solver_type": "QP (6-Param Pseudo-Flatness) - C port",
+        "trajectory_solver_time_ms": 3.765086,
+        "tracking_error": {
+            "rmse_position_m": 0.020923,
+            "max_position_error_m": 0.037017,
+            "rmse_heading_rad": 0.00236,
+            "rmse_heading_deg": 0.135215,
+            "rmse_surge_u_mps": 0.000602,
+            "rmse_sway_v_mps": 0.000104,
+            "rmse_yaw_rate_r_radps": 0.000198
+        }
+    },
     "case3": {
         "case": "Case 3",
         "solver_type": "CasADi NLP (IPOPT)",
-        "trajectory_solver_time_ms": 1863.437587991939,
+        "trajectory_solver_time_ms": 1816.9326659990475,
         "tracking_error": {
             "rmse_position_m": 0.033710828921450824,
             "max_position_error_m": 0.04966854050698191,
