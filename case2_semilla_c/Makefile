@@ -1,23 +1,29 @@
 CC = gcc
-CFLAGS = -O3 -march=native -Wall -Wextra -std=c11
+CFLAGS = -O3 -march=native -Wall -Wextra -std=c11 -Iinclude
 LDFLAGS = -lm
 
-TARGET = c2_flatness
-SRC = c2_flatness.c
+SRC_COMMON = src/c2_usv_params.c src/c2_min_jerk_qp.c src/c2_sqp_optimizer.c src/c2_flatness_reconstruct.c
 
-all: $(TARGET)
+all: c2_main c2_simulate_openloop
 
-$(TARGET): $(SRC)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRC) $(LDFLAGS)
+c2_main: $(SRC_COMMON) src/c2_main.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-run: $(TARGET)
-	./$(TARGET)
+c2_simulate_openloop: $(SRC_COMMON) src/c2_simulate_openloop.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-bench: $(TARGET)
-	@echo "Running 20x to measure steady-state timing..."
-	@for i in $$(seq 1 20); do ./$(TARGET) | grep "Total pipeline"; done
+run: all
+	./c2_main
+	./c2_simulate_openloop
+
+plots: run
+	python3 plot_results.py
+
+bench: c2_main
+	@echo "Running c2_main 20x to measure steady-state timing..."
+	@for i in $$(seq 1 20); do ./c2_main | grep "Compute Time"; done
 
 clean:
-	rm -f $(TARGET) c2_flatness_c_output.csv
+	rm -f c2_main c2_simulate_openloop *.csv *.json *.png
 
-.PHONY: all run bench clean
+.PHONY: all run plots bench clean

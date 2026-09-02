@@ -1,0 +1,14 @@
+{
+    "case": "Case 2",
+    "solver_type": "QP (6-Param Pseudo-Flatness) - C port",
+    "trajectory_solver_time_ms": 3.720323,
+    "tracking_error": {
+        "rmse_position_m": 0.020923,
+        "max_position_error_m": 0.037017,
+        "rmse_heading_rad": 0.002360,
+        "rmse_heading_deg": 0.135215,
+        "rmse_surge_u_mps": 0.000602,
+        "rmse_sway_v_mps": 0.000104,
+        "rmse_yaw_rate_r_radps": 0.000198
+    }
+}

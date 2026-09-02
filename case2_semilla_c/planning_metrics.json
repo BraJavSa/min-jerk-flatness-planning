@@ -1,0 +1,7 @@
+{
+    "case": "Case 2",
+    "solver_type": "QP (6-Param Pseudo-Flatness) - C port",
+    "solve_time_ms": 3.747854,
+    "total_sim_time_s": 115.500000,
+    "num_samples": 3466
+}
