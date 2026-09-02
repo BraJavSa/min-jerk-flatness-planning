@@ -1,0 +1,14 @@
+{
+    "case": "Case 2",
+    "solver_type": "QP (6-Param Pseudo-Flatness)",
+    "trajectory_solver_time_ms": 3.754606,
+    "tracking_error": {
+        "rmse_position_m": 0.011565,
+        "max_position_error_m": 0.019022,
+        "rmse_heading_rad": 0.001165,
+        "rmse_heading_deg": 0.066743,
+        "rmse_surge_u_mps": 0.000601,
+        "rmse_sway_v_mps": 0.000060,
+        "rmse_yaw_rate_r_radps": 0.000164
+    }
+}

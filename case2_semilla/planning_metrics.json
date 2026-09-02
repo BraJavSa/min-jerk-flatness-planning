@@ -1,0 +1,7 @@
+{
+    "case": "Case 2",
+    "solver_type": "QP (6-Param Pseudo-Flatness)",
+    "solve_time_ms": 285.5462329898728,
+    "total_sim_time_s": 115.5,
+    "num_samples": 3466
+}
