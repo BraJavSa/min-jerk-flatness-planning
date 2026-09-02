@@ -1,0 +1,14 @@
+{
+    "case": "Case 1",
+    "solver_type": "QP (5-Param Model)",
+    "trajectory_solver_time_ms": 124.64138999348506,
+    "tracking_error": {
+        "rmse_position_m": 3.539194739732595,
+        "max_position_error_m": 6.561604039329214,
+        "rmse_heading_rad": 0.15251988846395084,
+        "rmse_heading_deg": 8.738745900790436,
+        "rmse_surge_u_mps": 0.002015319118999386,
+        "rmse_sway_v_mps": 0.001691969368747355,
+        "rmse_yaw_rate_r_radps": 0.007262012884911999
+    }
+}

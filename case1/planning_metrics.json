@@ -1,0 +1,7 @@
+{
+    "case": "Case 1",
+    "solver_type": "Minimum Jerk QP",
+    "solve_time_ms": 100.12601800553966,
+    "total_sim_time_s": 115.5,
+    "num_samples": 3466
+}

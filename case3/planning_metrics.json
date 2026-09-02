@@ -1,0 +1,7 @@
+{
+    "case": "Case 3",
+    "solver_type": "CasADi NLP (IPOPT)",
+    "solve_time_ms": 1751.1714590073097,
+    "total_sim_time_s": 115.5,
+    "num_samples": 3466
+}
