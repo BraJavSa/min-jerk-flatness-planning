@@ -1,0 +1,19 @@
+{
+    "model_type": "Asymmetric Richards Generalized Logistic Curve",
+    "pos": {
+        "A": 1e-06,
+        "K": 40.0209,
+        "B": 2.6249,
+        "v": 0.1615,
+        "C": 0.9432,
+        "M": 1e-05
+    },
+    "neg": {
+        "A": -31.499,
+        "K": -1e-05,
+        "B": 3.6986,
+        "v": 0.3264,
+        "C": 0.9713,
+        "M": -1.0
+    }
+}
