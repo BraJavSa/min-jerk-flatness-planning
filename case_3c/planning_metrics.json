@@ -1,7 +1,0 @@
-{
-    "case": "Case 3 (C)",
-    "solver_type": "Ipopt C API (NLP Flatness)",
-    "solve_time_ms": 6843.31285,
-    "total_sim_time_s": 115.50000,
-    "num_samples": 3466
-}

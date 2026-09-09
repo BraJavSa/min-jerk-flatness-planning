@@ -1,7 +1,13 @@
 {
     "case": "Case 3",
     "solver_type": "CasADi NLP (IPOPT)",
-    "solve_time_ms": 707.9356769972946,
+    "Tiempo QP (planificacion)": "830.97375 ms",
+    "Tiempo reconstruccion planitud": "34.70677 ms",
+    "Tiempo total": "865.68052 ms",
+    "tiempo_qp_ms": 830.9737490053521,
+    "tiempo_planitud_ms": 34.706771999481134,
+    "tiempo_total_ms": 865.6805210048333,
+    "solve_time_ms": 865.6805210048333,
     "total_sim_time_s": 115.5,
     "num_samples": 3466
 }

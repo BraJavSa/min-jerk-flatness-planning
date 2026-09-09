@@ -51,11 +51,11 @@ int main(void)
         waypoints_flat[2 * i + 1] = waypoints[i][1];
     }
 
-    double t_start = now_ms();
-
+    double t_qp0 = now_ms();
     MinJerkTrajectory2D planner;
     mjt2d_init(&planner, waypoints_flat, times, n_wp,
                v0_vec[0], v0_vec[1], vf_vec[0], vf_vec[1]);
+    double qp_time_ms = now_ms() - t_qp0;
 
     double *t_sim, *pos, *vel, *acc, *jerk;
     int N = mjt2d_sample(&planner, DT_SIM, &t_sim, &pos, &vel, &acc, &jerk);
@@ -70,26 +70,43 @@ int main(void)
     double *T_plan = (double *)malloc(sizeof(double) * 2 * N);
     double *T_act = (double *)malloc(sizeof(double) * 2 * N);
 
+    double t_fl0 = now_ms();
     reconstruct_flatness_h2(pos, vel, acc, jerk, t_sim, N, NULL,
                              eta, nu, tau_plan, tau_act,
                              tau_u_raw, tau_r_raw, cmds, T_plan, T_act);
+    double flatness_time_ms = now_ms() - t_fl0;
+    double total_time_ms = qp_time_ms + flatness_time_ms;
 
-    double solve_time_ms = now_ms() - t_start;
-
-    printf("[Main] Trajectory Solver (QP) Compute Time: %.4f ms\n", solve_time_ms);
+    printf("==================================================\n");
+    printf("CASE 2 (C) - Planificacion QP + Reconstruccion Pseudo-Planitud\n");
+    printf("--------------------------------------------------\n");
+    printf("Muestras:                       %d (dt = %.5f s, T = %.3f s)\n",
+           N, DT_SIM, t_sim[N - 1] - t_sim[0]);
+    printf("Tiempo QP (planificacion):      %.5f ms\n", qp_time_ms);
+    printf("Tiempo reconstruccion planitud: %.5f ms\n", flatness_time_ms);
+    printf("Tiempo total:                   %.5f ms\n", total_time_ms);
+    printf("==================================================\n");
 
     /* Write metrics JSON */
     FILE *fm = fopen("planning_metrics.json", "w");
     if (fm) {
         fprintf(fm,
             "{\n"
-            "    \"case\": \"Case 2 Semilla\",\n"
-            "    \"solver_type\": \"QP (9-Param Pseudo-Flatness)\",\n"
+            "    \"case\": \"Case 2 Semilla (C)\",\n"
+            "    \"solver_type\": \"QP (6-Param Pseudo-Flatness)\",\n"
+            "    \"Tiempo QP (planificacion)\": \"%.5f ms\",\n"
+            "    \"Tiempo reconstruccion planitud\": \"%.5f ms\",\n"
+            "    \"Tiempo total\": \"%.5f ms\",\n"
+            "    \"tiempo_qp_ms\": %.5f,\n"
+            "    \"tiempo_planitud_ms\": %.5f,\n"
+            "    \"tiempo_total_ms\": %.5f,\n"
             "    \"solve_time_ms\": %.6f,\n"
             "    \"total_sim_time_s\": %.6f,\n"
             "    \"num_samples\": %d\n"
             "}\n",
-            solve_time_ms, t_sim[N - 1] - t_sim[0], N);
+            qp_time_ms, flatness_time_ms, total_time_ms,
+            qp_time_ms, flatness_time_ms, total_time_ms,
+            total_time_ms, t_sim[N - 1] - t_sim[0], N);
         fclose(fm);
     }
 

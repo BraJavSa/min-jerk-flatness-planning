@@ -33,15 +33,26 @@ def main():
     dir_f = waypoints[8] - waypoints[7]
     dir_f_unit = dir_f / np.linalg.norm(dir_f)
     vf_vec = tuple(0.01 * dir_f_unit)
-    
-    EPSILON_TV = 0.1 
+    EPSILON_TV = 0.1
     t_start = time.perf_counter()
     planner = FlatnessNLP(waypoints, times, vel_start=v0_vec, vel_end=vf_vec, epsilon=EPSILON_TV)
     t_sim, pos, vel, acc, jerk = planner.sample(dt_sim=DT_SIM)
-    flat_data = reconstruct_flatness_full(pos, vel, acc, jerk, t_sim)
-    solve_time_ms = (time.perf_counter() - t_start) * 1000.0
+    nlp_time_ms = (time.perf_counter() - t_start) * 1000.0
 
-    
+    t_fl0 = time.perf_counter()
+    flat_data = reconstruct_flatness_full(pos, vel, acc, jerk, t_sim)
+    flatness_time_ms = (time.perf_counter() - t_fl0) * 1000.0
+    total_time_ms = nlp_time_ms + flatness_time_ms
+
+    print("==================================================")
+    print("CASE 3 - Planificacion NLP (CasADi) + Reconstruccion Exacta 6-Param")
+    print("--------------------------------------------------")
+    print(f"Muestras:                       {len(t_sim)} (dt = {DT_SIM:.5f} s, T = {t_sim[-1] - t_sim[0]:.3f} s)")
+    print(f"Tiempo QP (planificacion):      {nlp_time_ms:.5f} ms")
+    print(f"Tiempo reconstruccion planitud: {flatness_time_ms:.5f} ms")
+    print(f"Tiempo total:                   {total_time_ms:.5f} ms")
+    print("==================================================")
+
     eta_ref  = flat_data['eta']       
     nu_ref   = flat_data['nu']        
     tau_ref  = flat_data['tau_plan']  
@@ -51,14 +62,20 @@ def main():
     planning_metrics = {
         "case": "Case 3",
         "solver_type": "CasADi NLP (IPOPT)",
-        "solve_time_ms": float(solve_time_ms),
+        "Tiempo QP (planificacion)": f"{nlp_time_ms:.5f} ms",
+        "Tiempo reconstruccion planitud": f"{flatness_time_ms:.5f} ms",
+        "Tiempo total": f"{total_time_ms:.5f} ms",
+        "tiempo_qp_ms": float(nlp_time_ms),
+        "tiempo_planitud_ms": float(flatness_time_ms),
+        "tiempo_total_ms": float(total_time_ms),
+        "solve_time_ms": float(total_time_ms),
         "total_sim_time_s": float(t_sim[-1] - t_sim[0]),
         "num_samples": int(len(t_sim))
     }
     metrics_file = os.path.join(script_dir, 'planning_metrics.json')
     with open(metrics_file, 'w') as f:
         json.dump(planning_metrics, f, indent=4)
-    print(f"[Main] Trajectory Solver (NLP) Compute Time: {solve_time_ms:.4f} ms")
+    print(f"Metricas guardadas en: {metrics_file}")
 
     fig, axs = plt.subplots(5, 1, figsize=(10, 16), dpi=300)
     c_blue   = '#2563EB'

@@ -86,6 +86,27 @@ int main(void) {
            flat[n_steps - 1].tau_plan[0], flat[n_steps - 1].tau_plan[1]);
     printf("==================================================\n");
 
+    /* --- Guardar metricas en JSON --- */
+    const char *json_path = "planning_metrics.json";
+    FILE *fj = fopen(json_path, "w");
+    if (fj) {
+        fprintf(fj, "{\n");
+        fprintf(fj, "    \"case\": \"Case 1 (C)\",\n");
+        fprintf(fj, "    \"solver_type\": \"QP (5-Param Model)\",\n");
+        fprintf(fj, "    \"Tiempo QP (planificacion)\": \"%.5f ms\",\n", qp_time_ms);
+        fprintf(fj, "    \"Tiempo reconstruccion planitud\": \"%.5f ms\",\n", flatness_time_ms);
+        fprintf(fj, "    \"Tiempo total\": \"%.5f ms\",\n", qp_time_ms + flatness_time_ms);
+        fprintf(fj, "    \"tiempo_qp_ms\": %.5f,\n", qp_time_ms);
+        fprintf(fj, "    \"tiempo_planitud_ms\": %.5f,\n", flatness_time_ms);
+        fprintf(fj, "    \"tiempo_total_ms\": %.5f,\n", qp_time_ms + flatness_time_ms);
+        fprintf(fj, "    \"solve_time_ms\": %.5f,\n", qp_time_ms + flatness_time_ms);
+        fprintf(fj, "    \"total_sim_time_s\": %.5f,\n", t_sim[n_steps - 1] - t_sim[0]);
+        fprintf(fj, "    \"num_samples\": %d\n", n_steps);
+        fprintf(fj, "}\n");
+        fclose(fj);
+        printf("Metricas guardadas en: %s\n", json_path);
+    }
+
     /* --- CSV para graficar con plot_results.py --- */
     const char *csv_path = "case1_planning_results.csv";
     FILE *fp = fopen(csv_path, "w");
