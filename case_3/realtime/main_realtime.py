@@ -36,6 +36,8 @@ _CANDIDATES = [
 for _cand in _CANDIDATES:
     if _cand and os.path.isfile(os.path.join(_cand, 'usv_params.py')) and _cand not in sys.path:
         sys.path.insert(0, _cand)
+        print(f"[main_realtime] usando case_3 en: {_cand}", file=sys.stderr)
+        break
 
 from usv_params import DT_SIM
 from trajectory_nlp import FlatnessNLP

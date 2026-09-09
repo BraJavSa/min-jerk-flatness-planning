@@ -14,6 +14,11 @@
 #   fictitious sway force theta_tau_v (paper eq. 9) must be (approximately) zero,
 #   eq. (29): -epsilon <= theta_tau_v <= epsilon. That is the ONLY nonlinear
 #   inequality constraint in the NLP.
+#
+# CHANGE FOR REALTIME (case_3/realtime): the yaw-rate boundary condition at t=0
+# is now parameterized as r_start (default 0.0, identical behavior to before)
+# instead of being hardcoded to 0.0, so that main_realtime.py can seed the NLP
+# with the vehicle's actual measured r(0) instead of assuming it starts still.
 
 import numpy as np
 import casadi as ca
@@ -23,12 +28,13 @@ from usv_params import m11_real, m22_real, Yv_real
 
 class FlatnessNLP:
     def __init__(self, waypoints, times, vel_start=(0.1, 0.0), vel_end=(0.01, 0.0),
-                 epsilon=0.1, degree=4, n_ctrl_pts=None, n_colloc=400):
+                 epsilon=0.1, degree=4, n_ctrl_pts=None, n_colloc=400, r_start=0.0):
         self.waypoints = np.asarray(waypoints, dtype=float)
         self.times = np.asarray(times, dtype=float)
         self.tf = float(self.times[-1])
         self.v0 = vel_start
         self.vf = vel_end
+        self.r_start = r_start
         self.epsilon = epsilon
         self.degree = degree  # D_j in the paper ( = beta_j + 2 = 4 )
 
@@ -132,7 +138,7 @@ class FlatnessNLP:
 
         self.opti.subject_to(vx_b[0] == self.v0[0])
         self.opti.subject_to(vy_b[0] == self.v0[1])
-        self.opti.subject_to(vpsi_b[0] == 0.0)          # r(0) = 0
+        self.opti.subject_to(vpsi_b[0] == self.r_start)  # r(0) = r_start (0.0 por defecto, igual que antes)
         self.opti.subject_to(vx_b[1] == self.vf[0])
         self.opti.subject_to(vy_b[1] == self.vf[1])
 

@@ -44,7 +44,7 @@ from std_msgs.msg import Float64
 from nav_msgs.msg import Odometry
 
 # --- Conversion de frame ENU (ROS) -> frame de planificacion (marino) ---
-Y_SIGN = -1.0   # y_planif = Y_SIGN * y_ROS ; v_planif = Y_SIGN * v_ROS ; r_planif = Y_SIGN * r_ROS
+# La conversion de y, v, r se hace directamente al recibir la odometria.
 
 # --- Localizar case_3/ (padre de este archivo) para importar sus modulos ---
 def _resolve_case3_dir():
@@ -59,9 +59,15 @@ def _resolve_case3_dir():
     except Exception:
         pass
     for cand in candidates:
-        if cand is not None and cand.is_dir():
+        # No basta con que exista el directorio: tiene que contener usv_params.py,
+        # o silenciosamente se puede terminar apuntando a una carpeta vacia/incorrecta
+        # (p.ej. install/.../lib/ cuando colcon copia los scripts sueltos).
+        if cand is not None and (cand / 'usv_params.py').is_file():
             return cand
-    raise RuntimeError("No se encontro el directorio case_3 con usv_params.py")
+    raise RuntimeError(
+        "No se encontro case_3/ con usv_params.py. Candidatos probados: "
+        + ", ".join(str(c) for c in candidates)
+    )
 
 CASE3_DIR = _resolve_case3_dir()
 if str(CASE3_DIR) not in sys.path:
@@ -152,7 +158,7 @@ class Case3RealTimeNode(Node):
 
     def odom_callback(self, msg: Odometry):
         self.current_x = msg.pose.pose.position.x
-        self.current_y = msg.pose.pose.position.y
+        self.current_y = -msg.pose.pose.position.y
         qx = msg.pose.pose.orientation.x
         qy = msg.pose.pose.orientation.y
         qz = msg.pose.pose.orientation.z
@@ -161,18 +167,18 @@ class Case3RealTimeNode(Node):
 
         # twist ya viene en frame body (surge/sway/yaw-rate directos)
         self.current_u = float(msg.twist.twist.linear.x)
-        self.current_v = float(msg.twist.twist.linear.y)
-        self.current_r = float(msg.twist.twist.angular.z)
+        self.current_v = -float(msg.twist.twist.linear.y)
+        self.current_r = -float(msg.twist.twist.angular.z)
         self.odom_received = True
 
     def plan_trajectory(self):
-        # --- conversion ENU (ROS) -> frame de planificacion ---
+        # --- pose/vel ya convertidos al frame de planificacion ---
         x0 = self.current_x
-        y0 = Y_SIGN * self.current_y
+        y0 = self.current_y
         psi0 = self.current_yaw
         u0 = self.current_u
-        v0 = Y_SIGN * self.current_v
-        r0 = Y_SIGN * self.current_r
+        v0 = self.current_v
+        r0 = self.current_r
 
         self.get_logger().info(
             f'Pose/vel inicial ROS: x={self.current_x:.3f} y={self.current_y:.3f} '
@@ -294,14 +300,14 @@ class Case3RealTimeNode(Node):
         tau_u_act = T1_act + T2_act
         tau_r_act = (T1_act - T2_act) * dP
 
-        # Estado real, convertido al frame de planificacion para comparar 1-a-1 con la referencia
+        # Estado real, ya convertido al frame de planificacion para comparar 1-a-1 con la referencia
         self.log_t.append(elapsed)
         self.log_real_x.append(self.current_x)
-        self.log_real_y.append(Y_SIGN * self.current_y)
+        self.log_real_y.append(self.current_y)
         self.log_real_psi.append(self.current_yaw)
         self.log_real_u.append(self.current_u)
-        self.log_real_v.append(Y_SIGN * self.current_v)
-        self.log_real_r.append(Y_SIGN * self.current_r)
+        self.log_real_v.append(self.current_v)
+        self.log_real_r.append(self.current_r)
 
         self.log_ref_x.append(self.eta_ref[self.step_idx, 0])
         self.log_ref_y.append(self.eta_ref[self.step_idx, 1])
