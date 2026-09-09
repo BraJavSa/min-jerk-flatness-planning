@@ -1,31 +1,12 @@
-# Technique: Case 2 - Minimum Jerk QP Trajectory Planning + 6-Parameter Pseudo-Flatness Reconstruction (m11 != m22)
-
-import os
-import json
 import numpy as np
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DYN_MODEL_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..', 'DynamicModel'))
-
-MODEL_6PARAM_PATH = os.path.join(DYN_MODEL_DIR, 'model_6param_30Hz.json')
-if os.path.exists(MODEL_6PARAM_PATH):
-    with open(MODEL_6PARAM_PATH, 'r') as f:
-        _p6 = json.load(f)
-    m11_real = float(_p6['m11'])
-    m22_real = float(_p6['m22'])
-    m33_real = float(_p6['m33'])
-    Xu_real = float(_p6['Xu'])
-    Yv_real = float(_p6['Yv'])
-    Nr_real = float(_p6['Nr'])
-    dP = float(_p6.get('dP', 0.26))
-else:
-    m11_real = 50.53
-    m22_real = 85.08
-    m33_real = 17.25
-    Xu_real = 151.56
-    Yv_real = 133.77
-    Nr_real = 34.57
-    dP = 0.26
+m11_real = 21.128198860500447
+m22_real = 22.662800592601826
+m33_real = 6.55006306556083
+Xu_real = 36.76758792354202
+Yv_real = 32.582835049486235
+Nr_real = 8.913911138235079
+dP = 0.26
 
 m11_6 = m11_real
 m22_6 = m22_real
@@ -38,31 +19,10 @@ dP_6 = dP
 SAMPLE_RATE_HZ = 30.0
 DT_SIM = 1.0 / SAMPLE_RATE_HZ
 
-THRUSTER_JSON_PATH = os.path.join(DYN_MODEL_DIR, 'thruster_richards_params.json')
-if os.path.exists(THRUSTER_JSON_PATH):
-    with open(THRUSTER_JSON_PATH, 'r') as f:
-        _pt = json.load(f)
-    A_POS = float(_pt['pos']['A'])
-    K_POS = float(_pt['pos']['K'])
-    B_POS = float(_pt['pos']['B'])
-    M_POS = float(_pt['pos']['M'])
-    V_POS = float(_pt['pos']['v'])
-    C_POS = float(_pt['pos'].get('C', 1.0))
-    
-    A_NEG = float(_pt['neg']['A'])
-    K_NEG = float(_pt['neg']['K'])
-    B_NEG = float(_pt['neg']['B'])
-    M_NEG = float(_pt['neg']['M'])
-    V_NEG = float(_pt['neg']['v'])
-    C_NEG = float(_pt['neg'].get('C', 1.0))
-    
-    T_MAX = float(_pt['limits']['max_force_fwd'])
-    T_MIN = float(_pt['limits']['max_force_rev'])
-else:
-    A_POS, K_POS, B_POS, M_POS, V_POS, C_POS = -12.07098855, 73.72259622, 14.20242467, 0.99474311, 6.83239913, 1.0
-    A_NEG, K_NEG, B_NEG, M_NEG, V_NEG, C_NEG = -70.9610860, 7.47710923, 2.69365001, -3.79303820, 4.09908178e-04, 1.0
-    T_MAX = 65.92
-    T_MIN = -49.38
+A_POS, K_POS, B_POS, M_POS, V_POS, C_POS = -12.07098855, 73.72259622, 14.20242467, 0.99474311, 6.83239913, 1.0
+A_NEG, K_NEG, B_NEG, M_NEG, V_NEG, C_NEG = -70.9610860, 7.47710923, 2.69365001, -3.79303820, 4.09908178e-04, 1.0
+T_MAX = 65.92
+T_MIN = -49.38
 
 def thrust_from_cmd_richards(cmd):
     cmd_arr = np.asarray(cmd, dtype=float)
@@ -108,4 +68,3 @@ def cmd_from_thrust_array(T_array):
 
 thrust_from_cmd_poly = thrust_from_cmd_richards
 cmd_from_thrust_poly = cmd_from_thrust_richards
-

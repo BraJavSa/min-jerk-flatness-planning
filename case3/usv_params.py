@@ -1,84 +1,62 @@
 # Technique: Case 3 - Non-Linear Programming (NLP/IPOPT) Trajectory Planning + 6-Parameter Exact Flatness Reconstruction
+# Validated in open loop against the 9-Parameter (full nonlinear) identified dynamics.
 
-import os
-import json
 import numpy as np
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DYN_MODEL_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..', 'DynamicModel'))
+# ---------------------------------------------------------------------------
+# 6-Parameter model used for trajectory planning and flatness reconstruction
+# (from identified_models.json -> "linear-6-parameters")
+# ---------------------------------------------------------------------------
+m11_real = 21.128198860500447
+m22_real = 22.662800592601826
+m33_real = 6.55006306556083
+Xu_real = 36.76758792354202
+Yv_real = 32.582835049486235
+Nr_real = 8.913911138235079
+dP = 0.26
 
-MODEL_5PARAM_PATH = os.path.join(DYN_MODEL_DIR, 'model_5param_30Hz.json')
-if os.path.exists(MODEL_5PARAM_PATH):
-    with open(MODEL_5PARAM_PATH, 'r') as f:
-        _p5 = json.load(f)
-    m_5 = float(_p5['m'])
-    m33_5 = float(_p5['m33'])
-    Xu_5 = float(_p5['Xu'])
-    Yv_5 = float(_p5['Yv'])
-    Nr_5 = float(_p5['Nr'])
-    dP_5 = float(_p5.get('dP', 0.26))
-else:
-    m_5 = 50.0084
-    m33_5 = 17.4766
-    Xu_5 = 152.1198
-    Yv_5 = 132.3897
-    Nr_5 = 33.8675
-    dP_5 = 0.26
+m11_6 = m11_real
+m22_6 = m22_real
+m33_6 = m33_real
+Xu_6 = Xu_real
+Yv_6 = Yv_real
+Nr_6 = Nr_real
+dP_6 = dP
 
-MODEL_6PARAM_PATH = os.path.join(DYN_MODEL_DIR, 'model_6param_30Hz.json')
-if os.path.exists(MODEL_6PARAM_PATH):
-    with open(MODEL_6PARAM_PATH, 'r') as f:
-        _p6 = json.load(f)
-    m11_real = float(_p6['m11'])
-    m22_real = float(_p6['m22'])
-    m33_real = float(_p6['m33'])
-    Xu_real = float(_p6['Xu'])
-    Yv_real = float(_p6['Yv'])
-    Nr_real = float(_p6['Nr'])
-    dP = float(_p6.get('dP', 0.26))
-else:
-    m11_real = 50.05
-    m22_real = 84.36
-    m33_real = 17.21
-    Xu_real = 151.57
-    Yv_real = 132.50
-    Nr_real = 34.56
-    dP = 0.26
+# ---------------------------------------------------------------------------
+# 9-Parameter full nonlinear model used as the real simulation plant
+# (from identified_models.json -> "full-dynamics")
+# ---------------------------------------------------------------------------
+m11_full = 27.6527951473284
+m22_full = 30.76677961987949
+m33_full = 6.422382544661223
+Xu_full = 15.657929738187262
+Xuu_full = 14.389382088099678
+Yv_full = 42.20370985895385
+Yvv_full = 0.7067569214632512
+Nr_full = 4.940560878487763
+Nrr_full = 3.1501144317267036
 
+# ---------------------------------------------------------------------------
+# Sampling
+# ---------------------------------------------------------------------------
 SAMPLE_RATE_HZ = 30.0
 DT_SIM = 1.0 / SAMPLE_RATE_HZ
 
-THRUSTER_JSON_PATH = os.path.join(DYN_MODEL_DIR, 'thruster_richards_params.json')
-if os.path.exists(THRUSTER_JSON_PATH):
-    with open(THRUSTER_JSON_PATH, 'r') as f:
-        _pt = json.load(f)
-    A_POS = float(_pt['pos']['A'])
-    K_POS = float(_pt['pos']['K'])
-    B_POS = float(_pt['pos']['B'])
-    M_POS = float(_pt['pos']['M'])
-    V_POS = float(_pt['pos']['v'])
-    C_POS = float(_pt['pos'].get('C', 1.0))
-    
-    A_NEG = float(_pt['neg']['A'])
-    K_NEG = float(_pt['neg']['K'])
-    B_NEG = float(_pt['neg']['B'])
-    M_NEG = float(_pt['neg']['M'])
-    V_NEG = float(_pt['neg']['v'])
-    C_NEG = float(_pt['neg'].get('C', 1.0))
-    
-    T_MAX = float(_pt['limits']['max_force_fwd'])
-    T_MIN = float(_pt['limits']['max_force_rev'])
-else:
-    A_POS, K_POS, B_POS, M_POS, V_POS, C_POS = -12.07098855, 73.72259622, 14.20242467, 0.99474311, 6.83239913, 1.0
-    A_NEG, K_NEG, B_NEG, M_NEG, V_NEG, C_NEG = -70.9610860, 7.47710923, 2.69365001, -3.79303820, 4.09908178e-04, 1.0
-    T_MAX = 65.92
-    T_MIN = -49.38
+# ---------------------------------------------------------------------------
+# Thruster curve
+# ---------------------------------------------------------------------------
+A_POS, K_POS, B_POS, M_POS, V_POS, C_POS = -12.07098855, 73.72259622, 14.20242467, 0.99474311, 6.83239913, 1.0
+A_NEG, K_NEG, B_NEG, M_NEG, V_NEG, C_NEG = -70.9610860, 7.47710923, 2.69365001, -3.79303820, 4.09908178e-04, 1.0
+T_MAX = 65.92
+T_MIN = -49.38
+
 
 def thrust_from_cmd_richards(cmd):
     cmd_arr = np.asarray(cmd, dtype=float)
     scalar_input = (cmd_arr.ndim == 0)
     cmd_arr = np.atleast_1d(cmd_arr)
-    
+
     T = np.zeros_like(cmd_arr)
     pos = cmd_arr > 0.01
     neg = cmd_arr < -0.01
@@ -88,11 +66,12 @@ def thrust_from_cmd_richards(cmd):
     if np.any(neg):
         cn = cmd_arr[neg]
         T[neg] = A_NEG + (K_NEG - A_NEG) / ((C_NEG + np.exp(-B_NEG * (cn - M_NEG))) ** (1.0 / V_NEG))
-    
+
     T_clipped = np.clip(T, T_MIN, T_MAX)
     if scalar_input:
         return float(T_clipped[0])
     return T_clipped
+
 
 def cmd_from_thrust_richards(T_target):
     T_val = float(np.clip(T_target, T_MIN, T_MAX))
@@ -111,10 +90,12 @@ def cmd_from_thrust_richards(T_target):
         c = M_NEG - (1.0 / B_NEG) * np.log(val)
         return float(np.clip(c, -1.0, 0.0))
 
+
 def cmd_from_thrust_array(T_array):
     T_flat = np.asarray(T_array).ravel()
     c_flat = np.array([cmd_from_thrust_richards(Tv) for Tv in T_flat])
     return c_flat.reshape(np.asarray(T_array).shape)
+
 
 thrust_from_cmd_poly = thrust_from_cmd_richards
 cmd_from_thrust_poly = cmd_from_thrust_richards

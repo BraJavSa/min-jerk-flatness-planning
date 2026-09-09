@@ -20,15 +20,29 @@ plt.rcParams['font.sans-serif'] = 'DejaVu Sans'
 plt.rcParams['axes.edgecolor'] = '#333333'
 plt.rcParams['axes.linewidth'] = 1.2
 
-def real_6param_rk4_step(state, Tu, Tr, dt):
+# Full 9-parameter dynamics model for the real simulation plant
+m11_full = 27.6527951473284
+m22_full = 30.76677961987949
+m33_full = 6.422382544661223
+Xu_full = 15.657929738187262
+Xuu_full = 14.389382088099678
+Yv_full = 42.20370985895385
+Yvv_full = 0.7067569214632512
+Nr_full = 4.940560878487763
+Nrr_full = 3.1501144317267036
+
+def real_9param_rk4_step(state, Tu, Tr, dt):
     def deriv(s):
         _, _, p_i, u_i, v_i, r_i = s
         dx = u_i * np.cos(p_i) - v_i * np.sin(p_i)
         dy = u_i * np.sin(p_i) + v_i * np.cos(p_i)
         dpsi = r_i
-        du = (Tu + m22_real * v_i * r_i - Xu_real * u_i) / m11_real
-        dv = (-m11_real * u_i * r_i - Yv_real * v_i) / m22_real
-        dr = (Tr + (m11_real - m22_real) * u_i * v_i - Nr_real * r_i) / m33_real
+        
+        # 9-parameter nonlinear hydrodynamic damping terms
+        du = (Tu + m22_full * v_i * r_i - Xu_full * u_i - Xuu_full * u_i * abs(u_i)) / m11_full
+        dv = (-m11_full * u_i * r_i - Yv_full * v_i - Yvv_full * v_i * abs(v_i)) / m22_full
+        dr = (Tr + (m11_full - m22_full) * u_i * v_i - Nr_full * r_i - Nrr_full * r_i * abs(r_i)) / m33_full
+        
         return np.array([dx, dy, dpsi, du, dv, dr])
 
     k1 = deriv(state)
@@ -90,7 +104,7 @@ def main():
         hist_tau_applied.append([Tu_apply, Tr_apply])
         hist_T_applied.append([T_act_flat[i, 0], T_act_flat[i, 1]])
 
-        state_real = real_6param_rk4_step(state_real, Tu_apply, Tr_apply, DT_SIM)
+        state_real = real_9param_rk4_step(state_real, Tu_apply, Tr_apply, DT_SIM)
         hist_state_real.append(state_real.copy())
 
     hist_state_real = np.array(hist_state_real)
@@ -111,7 +125,7 @@ def main():
 
     metrics = {
         "case": "Case 2",
-        "solver_type": "QP (6-Param Pseudo-Flatness)",
+        "solver_type": "QP (6-Param Pseudo-Flatness with 9-Param Plant Simulation)",
         "trajectory_solver_time_ms": solve_time_ms,
         "tracking_error": {
             "rmse_position_m": rmse_pos,
@@ -129,7 +143,7 @@ def main():
         json.dump(metrics, f, indent=4)
 
     print("\n==================================================")
-    print("CASE 2 OPEN-LOOP TRAJECTORY METRICS:")
+    print("CASE 2 OPEN-LOOP TRAJECTORY METRICS (9-PARAM PLANT):")
     print(f"  - Trajectory Solver Time (QP): {solve_time_ms:.4f} ms")
     print(f"  - Position RMSE:               {rmse_pos:.4f} m")
     print(f"  - Max Position Error:          {max_err_pos:.4f} m")
@@ -151,7 +165,7 @@ def main():
     t_ctrl = t_sim[:-1]
 
     axs[0].plot(eta_ref[:, 0], eta_ref[:, 1], color=c_plan, lw=2.2, ls='--', label='Planned')
-    axs[0].plot(hist_state_real[:, 0], hist_state_real[:, 1], color=c_real, lw=2.0, label='Real')
+    axs[0].plot(hist_state_real[:, 0], hist_state_real[:, 1], color=c_real, lw=2.0, label='Real (9-Param)')
     axs[0].scatter(waypoints[:, 0], waypoints[:, 1], color='#111827', s=50, zorder=5, label='Waypoints')
     for idx_wp, (wx, wy) in enumerate(waypoints):
         axs[0].annotate(f'WP{idx_wp}', (wx, wy), textcoords="offset points", xytext=(5, 5), fontsize=8, fontweight='bold')
@@ -216,5 +230,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

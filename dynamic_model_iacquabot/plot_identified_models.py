@@ -1,62 +1,46 @@
 #!/usr/bin/env python3
 
+import sys
 import json
-import os
+import csv
 from pathlib import Path
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from matplotlib.ticker import FormatStrFormatter
-from scipy.signal import savgol_filter
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-CSV_PATH = SCRIPT_DIR / 'wamvsim_20260908_111030.csv'
-MODELS_PATH = SCRIPT_DIR / '..' / '..' / 'dynamic_sim_iacquabot_control' / 'identification' / 'identified_models.json'
-OUTPUT_PATH = SCRIPT_DIR / 'identified_models_comparison.pdf'
-
-MOTOR_TEMPLATE = {
-    'T200': {
-        'pos': {'A': 1e-06, 'K': 40.0209, 'B': 2.6249, 'v': 0.1615, 'C': 0.9432, 'M': 1e-05},
-        'neg': {'A': -31.499, 'K': -1e-05, 'B': 3.6986, 'v': 0.3264, 'C': 0.9713, 'M': -1.0},
-    },
+MOTOR = {
+    'pos': {'A': 1e-06, 'K': 40.0209, 'B': 2.6249, 'v': 0.1615, 'C': 0.9432, 'M': 1e-05},
+    'neg': {'A': -31.499, 'K': -1e-05, 'B': 3.6986, 'v': 0.3264, 'C': 0.9713, 'M': -1.0},
     'max_fwd': 36.3827,
     'max_rev': -28.4393,
 }
 
 
-def make_thruster_function():
-    positive = MOTOR_TEMPLATE['T200']['pos']
-    negative = MOTOR_TEMPLATE['T200']['neg']
-
-    def thrust(command):
-        command = np.atleast_1d(np.asarray(command, dtype=float))
-        result = np.zeros_like(command)
-
-        positive_mask = command > 0.01
-        negative_mask = command < -0.01
-        if np.any(positive_mask):
-            value = command[positive_mask]
-            exponent = np.clip(-positive['B'] * (value - positive['M']), -50.0, 50.0)
-            denominator = (positive['C'] + np.exp(exponent)) ** (1.0 / positive['v'])
-            result[positive_mask] = positive['A'] + (positive['K'] - positive['A']) / denominator
-        if np.any(negative_mask):
-            value = command[negative_mask]
-            exponent = np.clip(-negative['B'] * (value - negative['M']), -50.0, 50.0)
-            denominator = (negative['C'] + np.exp(exponent)) ** (1.0 / negative['v'])
-            result[negative_mask] = negative['A'] + (negative['K'] - negative['A']) / denominator
-        return np.clip(result, MOTOR_TEMPLATE['max_rev'], MOTOR_TEMPLATE['max_fwd'])
-
-    return thrust
+def branch_thrust(command, parameters):
+    return parameters['A'] + (parameters['K'] - parameters['A']) / (
+        parameters['C'] + np.exp(-parameters['B'] * (command - parameters['M']))
+    ) ** (1.0 / parameters['v'])
 
 
-def generalized_forces(left_command, right_command, thrust):
-    left_thrust = thrust(left_command)
-    right_thrust = thrust(right_command)
-    surge_force = 2.0 * left_thrust + 2.0 * right_thrust
-    yaw_moment = 2.0 * 0.29 * (right_thrust - left_thrust)
+def thrust_from_command(command):
+    result = np.zeros_like(command, dtype=float)
+    positive = command > 0.01
+    negative = command < -0.01
+    if np.any(positive):
+        result[positive] = branch_thrust(command[positive], MOTOR['pos'])
+    if np.any(negative):
+        result[negative] = branch_thrust(command[negative], MOTOR['neg'])
+    return np.clip(result, MOTOR['max_rev'], MOTOR['max_fwd'])
+
+
+def generalized_forces(left_command, right_command):
+    left_thrust = thrust_from_command(left_command)
+    right_thrust = thrust_from_command(right_command)
+    surge_force = 2.0 * (left_thrust + right_thrust)
+    yaw_moment = 0.29 * (-2.0 * left_thrust + 2.0 * right_thrust)
     return surge_force, yaw_moment
 
 
@@ -67,108 +51,148 @@ def clean_outliers(signal, maximum=5.0):
     cleaned = signal.copy()
     valid_indices = np.where(~outliers)[0]
     for index in np.where(outliers)[0]:
-        if valid_indices.size:
-            nearest = valid_indices[np.argmin(np.abs(valid_indices - index))]
-            cleaned[index] = signal[nearest]
+        nearest = valid_indices[np.argmin(np.abs(valid_indices - index))]
+        cleaned[index] = signal[nearest]
     return cleaned
 
 
-def model_to_internal_parameters(model):
-    return {
-        'm11': model['m'] - model.get('X_dot_u', 0.0),
-        'm22': model['m'] - model.get('Y_dot_v', 0.0),
-        'm33': model['Iz'] - model.get('N_dot_r', 0.0),
-        'Xu': model.get('Xu', 0.0),
-        'Xuu': model.get('Xuu', 0.0),
-        'Yv': model.get('Yv', 0.0),
-        'Yvv': model.get('Yvv', 0.0),
-        'Nr': model.get('Nr', 0.0),
-        'Nrr': model.get('Nrr', 0.0),
-    }
-
-
 def derivatives(state, surge_force, yaw_moment, model):
-    _, _, yaw, surge, sway, yaw_rate = state
+    _, _, yaw, u, v, r = state
     m11 = model['m11']
     m22 = model['m22']
     m33 = model['m33']
+    Xu = model.get('Xu', 0.0)
+    Xuu = model.get('Xuu', 0.0)
+    Yv = model.get('Yv', 0.0)
+    Yvv = model.get('Yvv', 0.0)
+    Nr = model.get('Nr', 0.0)
+    Nrr = model.get('Nrr', 0.0)
 
+    du = (surge_force + m22 * v * r - Xu * u - Xuu * abs(u) * u) / m11
+    dv = (-m11 * u * r - Yv * v - Yvv * abs(v) * v) / m22
+    dr = (yaw_moment - (m22 - m11) * u * v - Nr * r - Nrr * abs(r) * r) / m33
     return np.array([
-        surge * np.cos(yaw) - sway * np.sin(yaw),
-        surge * np.sin(yaw) + sway * np.cos(yaw),
-        yaw_rate,
-        (surge_force + m22 * sway * yaw_rate - model['Xu'] * surge
-         - model['Xuu'] * abs(surge) * surge) / m11,
-        (-m11 * surge * yaw_rate - model['Yv'] * sway
-         - model['Yvv'] * abs(sway) * sway) / m22,
-        (yaw_moment - (m22 - m11) * surge * sway - model['Nr'] * yaw_rate
-         - model['Nrr'] * abs(yaw_rate) * yaw_rate) / m33,
+        u * np.cos(yaw) - v * np.sin(yaw),
+        u * np.sin(yaw) + v * np.cos(yaw),
+        r,
+        du,
+        dv,
+        dr,
     ])
 
 
 def simulate(time, surge_force, yaw_moment, initial_state, model):
     state = np.zeros((len(time), 6))
     state[0] = initial_state
-
     for index in range(len(time) - 1):
-        step = time[index + 1] - time[index]
+        dt = time[index + 1] - time[index]
         current = state[index]
         force_mid = 0.5 * (surge_force[index] + surge_force[index + 1])
         moment_mid = 0.5 * (yaw_moment[index] + yaw_moment[index + 1])
-
         k1 = derivatives(current, surge_force[index], yaw_moment[index], model)
-        k2 = derivatives(current + 0.5 * step * k1, force_mid, moment_mid, model)
-        k3 = derivatives(current + 0.5 * step * k2, force_mid, moment_mid, model)
-        k4 = derivatives(current + step * k3, surge_force[index + 1], yaw_moment[index + 1], model)
-        state[index + 1] = current + step * (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0
-
+        k2 = derivatives(current + 0.5 * dt * k1, force_mid, moment_mid, model)
+        k3 = derivatives(current + 0.5 * dt * k2, force_mid, moment_mid, model)
+        k4 = derivatives(current + dt * k3, surge_force[index + 1], yaw_moment[index + 1], model)
+        state[index + 1] = current + dt * (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0
     return state
 
 
-def main():
-    data = pd.read_csv(CSV_PATH)
+def load_latest_dataset(data_dir):
+    data_path = Path(data_dir)
+    if data_path.is_file():
+        candidates = [data_path]
+    elif data_path.is_dir():
+        candidates = list(data_path.glob('wamvsim_*.csv'))
+        if not candidates:
+            candidates = list(data_path.rglob('wamvsim_*.csv'))
+        if not candidates:
+            candidates = list(data_path.glob('*.csv'))
+        if not candidates:
+            candidates = list(data_path.rglob('*.csv'))
+        candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    else:
+        candidates = []
 
-    time = data['t'].to_numpy(dtype=float)
+    if not candidates:
+        raise FileNotFoundError(f'No identification CSV files found in: {data_dir}')
+
+    required = {'t', 'vx', 'vy', 'wz', 'u_left', 'u_right'}
+    last_err = None
+
+    for f in candidates:
+        try:
+            with f.open('r', newline='') as fp:
+                rows = list(csv.DictReader(fp))
+            if not rows or not required.issubset(rows[0].keys()):
+                continue
+            return f, rows
+        except Exception as e:
+            last_err = str(e)
+            continue
+
+    raise ValueError(f'No valid dataset in {data_dir}. Last error: {last_err}')
+
+
+def main():
+    script_dir = Path(__file__).resolve().parent
+
+    # argv[1] -> carpeta o CSV a usar (por defecto: la carpeta del script)
+    # argv[2] -> ruta al identified_models.json (por defecto: junto al script)
+    data_dir = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else script_dir
+    models_path = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else script_dir / 'identified_models.json'
+
+    csv_path, rows = load_latest_dataset(data_dir)
+    print(f'CSV: {csv_path}')
+    print(f'Modelos: {models_path}')
+
+    with models_path.open() as fp:
+        model_data = json.load(fp)
+
+    # Mismo procesamiento de datos que en la identificacion
+    time = np.asarray([float(row['t']) for row in rows])
     time -= time[0]
-    real_surge = clean_outliers(data['vx'].to_numpy(dtype=float))
-    real_sway = clean_outliers(data['vy'].to_numpy(dtype=float))
-    real_yaw_rate = clean_outliers(data['wz'].to_numpy(dtype=float))
-    filtered_surge = savgol_filter(real_surge, 25, 2)
-    filtered_sway = savgol_filter(real_sway, 25, 2)
-    filtered_yaw_rate = savgol_filter(real_yaw_rate, 25, 2)
+    real_u = clean_outliers(np.asarray([float(row['vx']) for row in rows]))
+    real_v = clean_outliers(np.asarray([float(row['vy']) for row in rows]))
+    real_r = clean_outliers(np.asarray([float(row['wz']) for row in rows]))
+    left = np.asarray([float(row['u_left']) for row in rows])
+    right = np.asarray([float(row['u_right']) for row in rows])
+
+    surge_force, yaw_moment = generalized_forces(left, right)
+
     initial_state = np.array([
-        data['x'].iloc[0], data['y'].iloc[0], data['yaw'].iloc[0],
-        filtered_surge[0], filtered_sway[0], filtered_yaw_rate[0]
+        float(rows[0].get('x', 0.0)),
+        float(rows[0].get('y', 0.0)),
+        float(rows[0].get('yaw', 0.0)),
+        real_u[0],
+        real_v[0],
+        real_r[0],
     ])
 
-    with MODELS_PATH.open() as file:
-        model_data = json.load(file)
-    thrust = make_thruster_function()
-    surge_force, yaw_moment = generalized_forces(
-        data['u_left'].to_numpy(dtype=float),
-        data['u_right'].to_numpy(dtype=float),
-        thrust,
-    )
-
-    simulations = {}
-    for name in ('symmetric-5-parameters', 'linear-6-parameters', 'full-dynamics'):
-        simulations[name] = simulate(
-            time,
-            surge_force,
-            yaw_moment,
-            initial_state,
-            model_to_internal_parameters(model_data[name]),
-        )
+    # Simulacion de los 3 modelos identificados (ya vienen en formato
+    # interno m11/m22/m33/Xu/Xuu/Yv/Yvv/Nr/Nrr, sin conversion necesaria)
+    order = ('symmetric-5-parameters', 'linear-6-parameters', 'full-dynamics')
+    simulations = {
+        name: simulate(time, surge_force, yaw_moment, initial_state, model_data[name])
+        for name in order
+    }
 
     rmse = {
         name: (
-            np.sqrt(np.mean((simulation[:, 3] - real_surge) ** 2)),
-            np.sqrt(np.mean((simulation[:, 4] - real_sway) ** 2)),
-            np.sqrt(np.mean((simulation[:, 5] - real_yaw_rate) ** 2)),
+            np.sqrt(np.mean((sim[:, 3] - real_u) ** 2)),
+            np.sqrt(np.mean((sim[:, 4] - real_v) ** 2)),
+            np.sqrt(np.mean((sim[:, 5] - real_r) ** 2)),
         )
-        for name, simulation in simulations.items()
+        for name, sim in simulations.items()
     }
 
+    print('\nRMSE de validacion por simulacion:')
+    for name, values in rmse.items():
+        print(f'  {name:24s}  u: {values[0]:.6f} m/s   v: {values[1]:.6f} m/s   r: {values[2]:.6f} rad/s')
+
+    # ------------------------------------------------------------------
+    # Grafica: misma estetica que identified_models_comparison.pdf
+    # (2x2: surge, sway, yaw rate + barras de RMSE, sin T_u/T_r)
+    # ------------------------------------------------------------------
     plt.rcParams.update({
         'font.size': 10.0,
         'axes.labelsize': 10.0,
@@ -197,13 +221,13 @@ def main():
     }
 
     signals = [
-        (axes[0, 0], real_surge, 3, r'Surge Velocity $u \ [\mathrm{m/s}]$'),
-        (axes[0, 1], real_sway, 4, r'Sway Velocity $v \ [\mathrm{m/s}]$'),
-        (axes[1, 0], real_yaw_rate, 5, r'Yaw Rate $r \ [\mathrm{rad/s}]$'),
+        (axes[0, 0], real_u, 3, r'Surge Velocity $u \ [\mathrm{m/s}]$'),
+        (axes[0, 1], real_v, 4, r'Sway Velocity $v \ [\mathrm{m/s}]$'),
+        (axes[1, 0], real_r, 5, r'Yaw Rate $r \ [\mathrm{rad/s}]$'),
     ]
     for axis, real_signal, state_index, ylabel in signals:
         axis.plot(time, real_signal, color=colors['real'], linestyle='-', label='Real', linewidth=1.2)
-        for name in ('symmetric-5-parameters', 'linear-6-parameters', 'full-dynamics'):
+        for name in order:
             axis.plot(
                 time,
                 simulations[name][:, state_index],
@@ -225,9 +249,8 @@ def main():
     ]
     positions = np.arange(len(categories))
     width = 0.24
-    for offset, name in zip((-width, 0.0, width), ('symmetric-5-parameters', 'linear-6-parameters', 'full-dynamics')):
-        axis = axes[1, 1]
-        axis.bar(positions + offset, rmse[name], width, color=colors[name], edgecolor='black')
+    for offset, name in zip((-width, 0.0, width), order):
+        axes[1, 1].bar(positions + offset, rmse[name], width, color=colors[name], edgecolor='black')
     axes[1, 1].set_ylabel(r'$\mathrm{RMSE \ Error}$')
     axes[1, 1].set_xticks(positions)
     axes[1, 1].set_xticklabels(categories)
@@ -238,14 +261,11 @@ def main():
     figure.legend(handles, labels_for_legend, loc='lower center', ncol=4,
                   bbox_to_anchor=(0.5, -0.01), frameon=True, edgecolor='black')
     figure.tight_layout(rect=[0, 0.05, 1, 1])
-    figure.savefig(OUTPUT_PATH, format='pdf', dpi=300, bbox_inches='tight')
-    plt.close(figure)
 
-    print(f'Using data: {CSV_PATH}')
-    print(f'Using models: {MODELS_PATH}')
-    print(f'Saved plot: {OUTPUT_PATH}')
-    for name, values in rmse.items():
-        print(f'{labels[name]} RMSE: u={values[0]:.6f}, v={values[1]:.6f}, r={values[2]:.6f}')
+    output_plot = script_dir / 'identified_models_comparison.pdf'
+    figure.savefig(output_plot, format='pdf', dpi=300, bbox_inches='tight')
+    plt.close(figure)
+    print(f'\nGrafica guardada en: {output_plot}')
 
 
 if __name__ == '__main__':

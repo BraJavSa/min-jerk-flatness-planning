@@ -1,0 +1,14 @@
+{
+    "case": "Case 1",
+    "solver_type": "QP (5-Param Flatness) validated vs 9-Param (Full Dynamics) plant",
+    "trajectory_solver_time_ms": 119.07851400610525,
+    "tracking_error": {
+        "rmse_position_m": 16.491817867693324,
+        "max_position_error_m": 25.669729587114883,
+        "rmse_heading_rad": 1.4466315161563092,
+        "rmse_heading_deg": 82.88588038636789,
+        "rmse_surge_u_mps": 0.1946669107176198,
+        "rmse_sway_v_mps": 0.03912987162892998,
+        "rmse_yaw_rate_r_radps": 0.06197076450725371
+    }
+}

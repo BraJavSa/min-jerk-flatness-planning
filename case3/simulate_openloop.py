@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Technique: Case 3 - Non-Linear Programming (NLP/IPOPT) Trajectory Planning + 6-Parameter Exact Flatness Reconstruction
+# validated in open loop against the 9-Parameter (full nonlinear) identified dynamics plant.
 
 import os
 import time
@@ -10,8 +11,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from usv_params import (
-    m11_real, m22_real, m33_real, Xu_real, Yv_real, Nr_real,
-    dP, DT_SIM, T_MAX, T_MIN
+    m11_full, m22_full, m33_full, Xu_full, Xuu_full, Yv_full, Yvv_full, Nr_full, Nrr_full,
+    DT_SIM, T_MAX, T_MIN
 )
 from trajectory_nlp import FlatnessNLP
 from flatness_reconstruct import reconstruct_flatness_full
@@ -20,15 +21,20 @@ plt.rcParams['font.sans-serif'] = 'DejaVu Sans'
 plt.rcParams['axes.edgecolor'] = '#333333'
 plt.rcParams['axes.linewidth'] = 1.2
 
-def real_6param_rk4_step(state, Tu, Tr, dt):
+
+def real_9param_rk4_step(state, Tu, Tr, dt):
+    """RK4 step of the true (9-parameter, full nonlinear) plant."""
     def deriv(s):
         _, _, p_i, u_i, v_i, r_i = s
         dx = u_i * np.cos(p_i) - v_i * np.sin(p_i)
         dy = u_i * np.sin(p_i) + v_i * np.cos(p_i)
         dpsi = r_i
-        du = (Tu + m22_real * v_i * r_i - Xu_real * u_i) / m11_real
-        dv = (-m11_real * u_i * r_i - Yv_real * v_i) / m22_real
-        dr = (Tr + (m11_real - m22_real) * u_i * v_i - Nr_real * r_i) / m33_real
+
+        # 9-parameter nonlinear hydrodynamic damping terms
+        du = (Tu + m22_full * v_i * r_i - Xu_full * u_i - Xuu_full * u_i * abs(u_i)) / m11_full
+        dv = (-m11_full * u_i * r_i - Yv_full * v_i - Yvv_full * v_i * abs(v_i)) / m22_full
+        dr = (Tr + (m11_full - m22_full) * u_i * v_i - Nr_full * r_i - Nrr_full * r_i * abs(r_i)) / m33_full
+
         return np.array([dx, dy, dpsi, du, dv, dr])
 
     k1 = deriv(state)
@@ -36,6 +42,7 @@ def real_6param_rk4_step(state, Tu, Tr, dt):
     k3 = deriv(state + 0.5 * dt * k2)
     k4 = deriv(state + dt * k3)
     return state + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+
 
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -62,7 +69,6 @@ def main():
     solve_time_ms = (time.perf_counter() - t_start) * 1000.0
     n_steps = len(t_sim)
 
-
     eta_ref = flat_data['eta']
     nu_ref = flat_data['nu']
     tau_ref = flat_data['tau_plan']
@@ -83,7 +89,7 @@ def main():
         hist_tau_applied.append([Tu_apply, Tr_apply])
         hist_T_applied.append([T_act_flat[i, 0], T_act_flat[i, 1]])
 
-        state_real = real_6param_rk4_step(state_real, Tu_apply, Tr_apply, DT_SIM)
+        state_real = real_9param_rk4_step(state_real, Tu_apply, Tr_apply, DT_SIM)
         hist_state_real.append(state_real.copy())
 
     hist_state_real = np.array(hist_state_real)
@@ -104,7 +110,7 @@ def main():
 
     metrics = {
         "case": "Case 3",
-        "solver_type": "CasADi NLP (IPOPT)",
+        "solver_type": "CasADi NLP (6-Param Exact Flatness with 9-Param Plant Simulation)",
         "trajectory_solver_time_ms": solve_time_ms,
         "tracking_error": {
             "rmse_position_m": rmse_pos,
@@ -122,7 +128,7 @@ def main():
         json.dump(metrics, f, indent=4)
 
     print("\n==================================================")
-    print("CASE 3 OPEN-LOOP TRAJECTORY METRICS:")
+    print("CASE 3 OPEN-LOOP TRAJECTORY METRICS (9-PARAM PLANT):")
     print(f"  - Trajectory Solver Time (NLP): {solve_time_ms:.4f} ms")
     print(f"  - Position RMSE:               {rmse_pos:.4f} m")
     print(f"  - Max Position Error:          {max_err_pos:.4f} m")
@@ -143,8 +149,8 @@ def main():
 
     t_ctrl = t_sim[:-1]
 
-    axs[0].plot(eta_ref[:, 0], eta_ref[:, 1], color=c_plan, lw=2.2, ls='--', label='Planned')
-    axs[0].plot(hist_state_real[:, 0], hist_state_real[:, 1], color=c_real, lw=2.0, label='Real')
+    axs[0].plot(eta_ref[:, 0], eta_ref[:, 1], color=c_plan, lw=2.2, ls='--', label='Planned (6-Param)')
+    axs[0].plot(hist_state_real[:, 0], hist_state_real[:, 1], color=c_real, lw=2.0, label='Real (9-Param)')
     axs[0].scatter(waypoints[:, 0], waypoints[:, 1], color='#111827', s=50, zorder=5, label='Waypoints')
     for idx_wp, (wx, wy) in enumerate(waypoints):
         axs[0].annotate(f'WP{idx_wp}', (wx, wy), textcoords="offset points", xytext=(5, 5), fontsize=8, fontweight='bold')
@@ -155,24 +161,24 @@ def main():
     axs[0].axis('equal')
     axs[0].legend(loc='best', frameon=True, facecolor='white', fontsize=8.5)
 
-    axs[1].plot(t_sim, nu_ref[:, 0], color=c_plan, ls='--', lw=1.8, label='Planned')
-    axs[1].plot(t_sim, hist_state_real[:, 3], color=c_real, lw=1.8, label='Real')
+    axs[1].plot(t_sim, nu_ref[:, 0], color=c_plan, ls='--', lw=1.8, label='Planned (6-Param)')
+    axs[1].plot(t_sim, hist_state_real[:, 3], color=c_real, lw=1.8, label='Real (9-Param)')
     axs[1].set_xlabel('Time [s]', fontweight='bold')
     axs[1].set_ylabel('Surge $u$ [m/s]', fontweight='bold')
     axs[1].set_title('Surge Velocity', fontsize=11, fontweight='bold', pad=6)
     axs[1].grid(True, ls=':', alpha=0.6)
     axs[1].legend(loc='upper right', frameon=True, facecolor='white', fontsize=8.5)
 
-    axs[2].plot(t_sim, nu_ref[:, 1], color=c_green_plan, ls='--', lw=1.8, label='Planned')
-    axs[2].plot(t_sim, hist_state_real[:, 4], color=c_real, lw=1.8, label='Real')
+    axs[2].plot(t_sim, nu_ref[:, 1], color=c_green_plan, ls='--', lw=1.8, label='Planned (6-Param)')
+    axs[2].plot(t_sim, hist_state_real[:, 4], color=c_real, lw=1.8, label='Real (9-Param)')
     axs[2].set_xlabel('Time [s]', fontweight='bold')
     axs[2].set_ylabel('Sway $v$ [m/s]', fontweight='bold')
     axs[2].set_title('Sway Velocity', fontsize=11, fontweight='bold', pad=6)
     axs[2].grid(True, ls=':', alpha=0.6)
     axs[2].legend(loc='upper right', frameon=True, facecolor='white', fontsize=8.5)
 
-    axs[3].plot(t_sim, nu_ref[:, 2], color=c_amber_plan, ls='--', lw=1.8, label='Planned')
-    axs[3].plot(t_sim, hist_state_real[:, 5], color=c_real, lw=1.8, label='Real')
+    axs[3].plot(t_sim, nu_ref[:, 2], color=c_amber_plan, ls='--', lw=1.8, label='Planned (6-Param)')
+    axs[3].plot(t_sim, hist_state_real[:, 5], color=c_real, lw=1.8, label='Real (9-Param)')
     axs[3].set_xlabel('Time [s]', fontweight='bold')
     axs[3].set_ylabel('Yaw Rate $r$ [rad/s]', fontweight='bold')
     axs[3].set_title('Yaw Rate', fontsize=11, fontweight='bold', pad=6)
@@ -206,6 +212,7 @@ def main():
     plt.savefig(out_img_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"Open-loop simulation completed. Plot saved to: {out_img_path}")
+
 
 if __name__ == '__main__':
     main()
