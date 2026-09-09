@@ -1,0 +1,7 @@
+{
+    "case": "Case 2 Semilla",
+    "solver_type": "QP (9-Param Pseudo-Flatness)",
+    "solve_time_ms": 5.105592,
+    "total_sim_time_s": 115.500000,
+    "num_samples": 3466
+}

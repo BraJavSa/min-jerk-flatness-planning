@@ -1,0 +1,15 @@
+{
+    "case": "Case 3 (C)",
+    "solver_type": "Ipopt C API (6-Param Flatness on 9-Param Plant)",
+    "trajectory_solver_time_ms": 9935.4060,
+    "simulation_time_ms": 0.4371,
+    "tracking_error": {
+        "rmse_position_m": 16.633547,
+        "max_position_error_m": 25.349816,
+        "rmse_heading_rad": 1.523977,
+        "rmse_heading_deg": 87.317452,
+        "rmse_surge_u_mps": 0.194310,
+        "rmse_sway_v_mps": 0.040820,
+        "rmse_yaw_rate_r_radps": 0.064427
+    }
+}
