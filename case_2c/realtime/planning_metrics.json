@@ -1,0 +1,13 @@
+{
+    "case": "Case 2 Semilla Realtime (C)",
+    "solver_type": "QP (6-Param Pseudo-Flatness)",
+    "Tiempo QP (planificacion)": "0.13569 ms",
+    "Tiempo reconstruccion planitud": "1.13822 ms",
+    "Tiempo total": "1.27391 ms",
+    "tiempo_qp_ms": 0.13569,
+    "tiempo_planitud_ms": 1.13822,
+    "tiempo_total_ms": 1.27391,
+    "total_sim_time_s": 115.5,
+    "num_samples": 3466,
+    "dispatch_latency_ms": 8.78786199609749
+}

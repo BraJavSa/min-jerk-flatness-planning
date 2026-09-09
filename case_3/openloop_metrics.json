@@ -1,7 +1,7 @@
 {
     "case": "Case 3",
     "solver_type": "CasADi NLP (6-Param Exact Flatness with 9-Param Plant Simulation)",
-    "trajectory_solver_time_ms": 671.1800799967023,
+    "trajectory_solver_time_ms": 872.7396260073874,
     "tracking_error": {
         "rmse_position_m": 16.635180272659028,
         "max_position_error_m": 25.35249112494713,

@@ -31,7 +31,7 @@ CASES = [
     {
         'key': 'case3',
         'label': 'Case 3',
-        'json_path': FLATNESS_DIR / 'case3' / 'planning_metrics.json',
+        'json_path': (FLATNESS_DIR / 'case_3' / 'planning_metrics.json') if (FLATNESS_DIR / 'case_3' / 'planning_metrics.json').exists() else (FLATNESS_DIR / 'case3' / 'planning_metrics.json'),
     }
 ]
 
