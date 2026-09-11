@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 static inline double now_ms(void) {
@@ -133,6 +134,21 @@ int main(int argc, char *argv[]) {
           flat[i].tau_plan[1], T1, T2, cmd_l, cmd_r);
     }
     fclose(fp);
+    char wp_csv_path[512];
+    char *last_slash = strrchr(output_csv_path, '/');
+    if (last_slash) {
+      int dlen = (int)(last_slash - output_csv_path);
+      snprintf(wp_csv_path, sizeof(wp_csv_path), "%.*s/waypoints.csv", dlen, output_csv_path);
+    } else {
+      snprintf(wp_csv_path, sizeof(wp_csv_path), "waypoints.csv");
+    }
+    FILE *fwp = fopen(wp_csv_path, "w");
+    if (fwp) {
+      for (int i = 0; i < n_wp; i++) {
+        fprintf(fwp, "%.6f,%.6f\n", wp_x[i], wp_y[i]);
+      }
+      fclose(fwp);
+    }
     printf("[Case 1 C Planner] Reference trajectory exported to: %s\n",
            output_csv_path);
   } else {

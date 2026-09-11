@@ -109,6 +109,11 @@ def main():
                 f'{cmds[i, 0]:.6f}', f'{cmds[i, 1]:.6f}',
             ])
     print(f"[main_realtime] Trajectory reference saved to: {out_csv}")
+    wp_csv = out_csv.parent / 'waypoints.csv'
+    with open(wp_csv, 'w', newline='') as fwp:
+        writer_wp = csv.writer(fwp)
+        for wp in waypoints:
+            writer_wp.writerow([f'{wp[0]:.6f}', f'{wp[1]:.6f}'])
 
     metrics = {
         'case': 'Case 3 (NLP/IPOPT + 6-Parameter Flatness)',

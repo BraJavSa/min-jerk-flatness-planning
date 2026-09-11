@@ -112,6 +112,13 @@ int main(void) {
                     flat[i].T_plan[0], flat[i].T_plan[1]);
         }
         fclose(fp);
+        FILE *fw = fopen("case1_waypoints.csv", "w");
+        if (fw) {
+            for (int i = 0; i < n_wp; i++) {
+                fprintf(fw, "%.6f,%.6f\n", wp_x[i], wp_y[i]);
+            }
+            fclose(fw);
+        }
         printf("CSV saved to: %s\n", csv_path);
     } else {
         fprintf(stderr, "Could not write to %s\n", csv_path);

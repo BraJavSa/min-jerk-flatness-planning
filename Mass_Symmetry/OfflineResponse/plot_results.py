@@ -28,7 +28,21 @@ def plot_planning(csv_path, out_path):
 
     fig, axs = plt.subplots(5, 1, figsize=(10, 16), dpi=300)
 
+    wp_path = os.path.join(script_dir, 'case1_waypoints.csv')
+    if os.path.exists(wp_path):
+        wp = np.genfromtxt(wp_path, delimiter=',')
+        wp_x, wp_y = wp[:, 0], wp[:, 1]
+    else:
+        base_wp = np.array([
+            [0.0, 0.0], [8.0, 0.0], [14.0, 5.0], [14.0, 13.0],
+            [20.0, 17.0], [28.0, 17.0], [32.0, 10.0], [26.0, 4.0], [20.0, 1.5]
+        ])
+        wp_x, wp_y = base_wp[:, 0], base_wp[:, 1]
+
     axs[0].plot(d['x'], d['y'], color=c_blue, lw=2.2, label='Planned trajectory')
+    axs[0].scatter(wp_x, wp_y, color='#111827', s=45, marker='o', edgecolors='white', linewidths=0.9, zorder=5, label='Waypoints')
+    axs[0].scatter(d['x'][0], d['y'][0], color='#10B981', s=55, marker='o', edgecolors='black', linewidths=0.8, zorder=6, label='Start')
+    axs[0].scatter(d['x'][-1], d['y'][-1], color='#DC2626', s=65, marker='X', edgecolors='black', linewidths=0.8, zorder=6, label='Goal')
     axs[0].set_xlabel('X [m]', fontweight='bold')
     axs[0].set_ylabel('Y [m]', fontweight='bold')
     axs[0].set_title('2D Trajectory', fontsize=12, fontweight='bold')

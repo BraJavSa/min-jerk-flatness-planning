@@ -152,11 +152,33 @@ def plot_tracking_results(csv_path=None, output_png=None, case_title="Mass Symme
 
     fig, axes = plt.subplots(4, 2, figsize=(10.0, 11.0), dpi=300)
 
+    wp_path = csv_path.parent / 'waypoints.csv'
+    if not wp_path.exists():
+        wp_path = script_dir / 'output' / 'waypoints.csv'
+    if wp_path.exists():
+        try:
+            wp_data = np.loadtxt(wp_path, delimiter=',')
+            wp_x = wp_data[:, 0]
+            wp_y = wp_data[:, 1]
+        except Exception:
+            wp_x, wp_y = None, None
+    else:
+        wp_x, wp_y = None, None
+
+    if wp_x is None or len(wp_x) == 0:
+        base_wp = np.array([
+            [0.0, 0.0], [8.0, 0.0], [14.0, 5.0], [14.0, 13.0],
+            [20.0, 17.0], [28.0, 17.0], [32.0, 10.0], [26.0, 4.0], [20.0, 1.5]
+        ])
+        wp_x = base_wp[:, 0]
+        wp_y = base_wp[:, 1]
+
     ax = axes[0, 0]
-    ax.plot(x_real, y_real, color=COLOR_REAL, linestyle='--', linewidth=1.3, label='Real (Odometry)', zorder=2)
-    ax.plot(x_ref, y_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label='Desired (Reference)', zorder=4)
-    ax.scatter(x_ref[0], y_ref[0], color='#10B981', s=45, marker='o', label='Start', zorder=5)
-    ax.scatter(x_ref[-1], y_ref[-1], color='#DC2626', s=55, marker='X', label='Goal', zorder=5)
+    ax.plot(x_ref, y_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label='Desired (Reference)', zorder=2)
+    ax.plot(x_real, y_real, color=COLOR_REAL, linestyle='--', linewidth=1.3, label='Real (Odometry)', zorder=4)
+    ax.scatter(wp_x, wp_y, color='#FACC15', s=45, marker='o', edgecolors='black', linewidths=1.0, label='Waypoints', zorder=6)
+    ax.scatter(x_ref[0], y_ref[0], color='#10B981', s=45, marker='o', edgecolors='black', linewidths=0.8, label='Start', zorder=7)
+    ax.scatter(x_ref[-1], y_ref[-1], color='#DC2626', s=55, marker='X', edgecolors='black', linewidths=0.8, label='Goal', zorder=7)
     ax.set_xlabel(r'Position $X \ [\mathrm{m}]$')
     ax.set_ylabel(r'Position $Y \ [\mathrm{m}]$')
     ax.axis('equal')
@@ -166,8 +188,8 @@ def plot_tracking_results(csv_path=None, output_png=None, case_title="Mass Symme
     ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 
     ax = axes[1, 0]
-    ax.plot(t, u_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label=r'Real $u$', zorder=2)
-    ax.plot(t, u_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Desired $u$', zorder=4)
+    ax.plot(t, u_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Desired $u$', zorder=2)
+    ax.plot(t, u_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label=r'Real $u$', zorder=4)
     ax.set_xlabel(r'Time $t \ [\mathrm{s}]$')
     ax.set_ylabel(r'Surge Velocity $u \ [\mathrm{m/s}]$')
     ax.set_xlim(0, t[-1])
@@ -176,8 +198,8 @@ def plot_tracking_results(csv_path=None, output_png=None, case_title="Mass Symme
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
     ax = axes[2, 0]
-    ax.plot(t, v_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label=r'Real $v$', zorder=2)
-    ax.plot(t, v_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Desired $v$', zorder=4)
+    ax.plot(t, v_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Desired $v$', zorder=2)
+    ax.plot(t, v_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label=r'Real $v$', zorder=4)
     ax.set_xlabel(r'Time $t \ [\mathrm{s}]$')
     ax.set_ylabel(r'Sway Velocity $v \ [\mathrm{m/s}]$')
     ax.set_xlim(0, t[-1])
@@ -186,8 +208,8 @@ def plot_tracking_results(csv_path=None, output_png=None, case_title="Mass Symme
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
     ax = axes[3, 0]
-    ax.plot(t, r_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label=r'Real $r$', zorder=2)
-    ax.plot(t, r_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Desired $r$', zorder=4)
+    ax.plot(t, r_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Desired $r$', zorder=2)
+    ax.plot(t, r_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label=r'Real $r$', zorder=4)
     ax.set_xlabel(r'Time $t \ [\mathrm{s}]$')
     ax.set_ylabel(r'Yaw Rate $r \ [\mathrm{rad/s}]$')
     ax.set_xlim(0, t[-1])

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <math.h>
 #include "usv_params.h"
@@ -129,6 +130,21 @@ int main(int argc, char *argv[])
                     cmds[2 * i + 0], cmds[2 * i + 1]);
         }
         fclose(fc);
+        char wp_csv_path[512];
+        char *last_slash = strrchr(output_csv_path, '/');
+        if (last_slash) {
+            int dlen = (int)(last_slash - output_csv_path);
+            snprintf(wp_csv_path, sizeof(wp_csv_path), "%.*s/waypoints.csv", dlen, output_csv_path);
+        } else {
+            snprintf(wp_csv_path, sizeof(wp_csv_path), "waypoints.csv");
+        }
+        FILE *fwp = fopen(wp_csv_path, "w");
+        if (fwp) {
+            for (int i = 0; i < n_wp; i++) {
+                fprintf(fwp, "%.6f,%.6f\n", wp_x[i], wp_y[i]);
+            }
+            fclose(fwp);
+        }
         printf("[Case 2 C Planner] Reference trajectory exported to: %s\n", output_csv_path);
     } else {
         fprintf(stderr, "[Case 2 C Planner] Error opening CSV file: %s\n", output_csv_path);
