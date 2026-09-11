@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import os
 import sys
 import json
@@ -21,12 +20,10 @@ MOTOR = {
 
 PARAM_NAMES_9 = ['m11', 'm22', 'm33', 'Xu', 'Xuu', 'Yv', 'Yvv', 'Nr', 'Nrr']
 
-
 def branch_thrust(command, parameters):
     return parameters['A'] + (parameters['K'] - parameters['A']) / (
         parameters['C'] + np.exp(-parameters['B'] * (command - parameters['M']))
     ) ** (1.0 / parameters['v'])
-
 
 def thrust_from_command(command):
     result = np.zeros_like(command, dtype=float)
@@ -38,14 +35,12 @@ def thrust_from_command(command):
         result[negative] = branch_thrust(command[negative], MOTOR['neg'])
     return np.clip(result, MOTOR['max_rev'], MOTOR['max_fwd'])
 
-
 def generalized_forces(left_command, right_command):
     left_thrust = thrust_from_command(left_command)
     right_thrust = thrust_from_command(right_command)
     surge_force = 2.0 * (left_thrust + right_thrust)
     yaw_moment = 0.29 * (-2.0 * left_thrust + 2.0 * right_thrust)
     return surge_force, yaw_moment
-
 
 def clean_outliers(signal, maximum=5.0):
     outliers = np.abs(signal) > maximum
@@ -57,7 +52,6 @@ def clean_outliers(signal, maximum=5.0):
         nearest = valid_indices[np.argmin(np.abs(valid_indices - index))]
         cleaned[index] = signal[nearest]
     return cleaned
-
 
 def derivatives(state, surge_force, yaw_moment, model):
     _, _, yaw, u, v, r = state
@@ -83,7 +77,6 @@ def derivatives(state, surge_force, yaw_moment, model):
         dr,
     ])
 
-
 def simulate(time, surge_force, yaw_moment, initial_state, model):
     state = np.zeros((len(time), 6))
     state[0] = initial_state
@@ -99,24 +92,20 @@ def simulate(time, surge_force, yaw_moment, initial_state, model):
         state[index + 1] = current + dt * (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0
     return state
 
-
 def build_phi_tau_9param(acc_u, acc_v, acc_r, u, v, r, Tu, Tr):
     N = len(u)
     Phi_list, Tau_list = [], []
     for k in range(N):
-        # m11 * du - m22 * (v*r) + Xu * u + Xuu * |u|*u = Tu
+
         Phi_list.append([acc_u[k], -v[k] * r[k], 0.0, u[k], abs(u[k]) * u[k], 0.0, 0.0, 0.0, 0.0])
         Tau_list.append(Tu[k])
 
-        # m11 * (u*r) + m22 * dv + Yv * v + Yvv * |v|*v = 0
         Phi_list.append([u[k] * r[k], acc_v[k], 0.0, 0.0, 0.0, v[k], abs(v[k]) * v[k], 0.0, 0.0])
         Tau_list.append(0.0)
 
-        # -m11 * (u*v) + m22 * (u*v) + m33 * dr + Nr * r + Nrr * |r|*r = Tr
         Phi_list.append([-u[k] * v[k], u[k] * v[k], acc_r[k], 0.0, 0.0, 0.0, 0.0, r[k], abs(r[k]) * r[k]])
         Tau_list.append(Tr[k])
     return np.array(Phi_list), np.array(Tau_list)
-
 
 def build_phi_tau_6param(acc_u, acc_v, acc_r, u, v, r, Tu, Tr):
     N = len(u)
@@ -132,12 +121,11 @@ def build_phi_tau_6param(acc_u, acc_v, acc_r, u, v, r, Tu, Tr):
         Tau_list.append(Tr[k])
     return np.array(Phi_list), np.array(Tau_list)
 
-
 def build_phi_tau_5param(acc_u, acc_v, acc_r, u, v, r, Tu, Tr):
     N = len(u)
     Phi_list, Tau_list = [], []
     for k in range(N):
-        # m11 = m22 = m
+
         Phi_list.append([acc_u[k] - v[k] * r[k], 0.0, u[k], 0.0, 0.0])
         Tau_list.append(Tu[k])
 
@@ -148,7 +136,6 @@ def build_phi_tau_5param(acc_u, acc_v, acc_r, u, v, r, Tu, Tr):
         Tau_list.append(Tr[k])
     return np.array(Phi_list), np.array(Tau_list)
 
-
 def theta9_to_model(theta):
     return {
         'm11': float(theta[0]), 'm22': float(theta[1]), 'm33': float(theta[2]),
@@ -157,9 +144,7 @@ def theta9_to_model(theta):
         'Nr': float(theta[7]), 'Nrr': float(theta[8]),
     }
 
-
 def numerical_gradient(func, x, eps=1e-4):
-    """Gradiente por diferencias finitas centradas."""
     grad = np.zeros_like(x)
     for i in range(len(x)):
         x_fwd = x.copy()
@@ -169,15 +154,8 @@ def numerical_gradient(func, x, eps=1e-4):
         grad[i] = (func(x_fwd) - func(x_bwd)) / (2.0 * eps)
     return grad
 
-
 def gradient_descent(obj_func, theta0, lb, ub, lr=0.05, max_iter=300,
                       eps=1e-4, tol=1e-7, verbose=True):
-    """
-    Gradiente descendente clásico sobre variables normalizadas en [0, 1]
-    (para que todos los parámetros, con escalas muy distintas, avancen
-    con pasos comparables), con recorte a los límites físicos [lb, ub]
-    y "backtracking" simple si un paso empeora el costo.
-    """
     lb = np.asarray(lb, dtype=float)
     ub = np.asarray(ub, dtype=float)
     span = ub - lb
@@ -202,7 +180,6 @@ def gradient_descent(obj_func, theta0, lb, ub, lr=0.05, max_iter=300,
         if grad_norm < tol:
             break
 
-        # backtracking: si el paso no mejora, se reduce
         current_cost = cost_norm(z)
         accepted = False
         trial_step = step
@@ -218,20 +195,19 @@ def gradient_descent(obj_func, theta0, lb, ub, lr=0.05, max_iter=300,
             break
 
         z = z_new
-        step = min(trial_step * 1.2, lr)  # recupera un poco el paso si funcionó
+        step = min(trial_step * 1.2, lr)
 
         if new_cost < best_cost:
             best_cost = new_cost
             best_z = z.copy()
 
         if verbose and (iteration % 20 == 0 or iteration == max_iter - 1):
-            print(f'  [grad. descendente 9-param] it {iteration:3d}  costo={new_cost:.6f}')
+            print(f'  [gradient descent 9-param] it {iteration:3d}  cost={new_cost:.6f}')
 
         if np.linalg.norm(z_new - z) < tol:
             break
 
     return from_norm(best_z), best_cost
-
 
 def load_latest_dataset(data_dir):
     data_path = Path(data_dir)
@@ -268,7 +244,6 @@ def load_latest_dataset(data_dir):
 
     raise ValueError(f'No valid dataset in {data_dir}. Last error: {last_err}')
 
-
 def main():
     script_dir = Path(__file__).resolve().parent
 
@@ -285,7 +260,6 @@ def main():
     csv_path, rows = load_latest_dataset(data_dir)
     print(f'CSV: {csv_path}')
 
-    # Procesamiento de datos igual que en test_table_9param.py
     time = np.asarray([float(row['t']) for row in rows])
     time -= time[0]
     real_u = clean_outliers(np.asarray([float(row['vx']) for row in rows]))
@@ -305,22 +279,15 @@ def main():
         real_r[0],
     ])
 
-    # Derivadas (aceleraciones) para la regresión
     acc_u = np.gradient(real_u, time)
     acc_v = np.gradient(real_v, time)
     acc_r = np.gradient(real_r, time)
 
-    # ------------------------------------------------------------------
-    # 1) Identificación por mínimos cuadrados de los 3 modelos
-    # ------------------------------------------------------------------
-
-    # --- 9 parámetros (dinámica completa) ---
     Phi9, Tau9 = build_phi_tau_9param(acc_u, acc_v, acc_r, real_u, real_v, real_r, surge_force, yaw_moment)
     lb9 = [10.0, 10.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     ub9 = [100.0, 100.0, 20.0, 200.0, 200.0, 200.0, 200.0, 100.0, 100.0]
     theta9_ls = lsq_linear(Phi9, Tau9, bounds=(lb9, ub9)).x
 
-    # --- 6 parámetros (amortiguamiento lineal) ---
     Phi6, Tau6 = build_phi_tau_6param(acc_u, acc_v, acc_r, real_u, real_v, real_r, surge_force, yaw_moment)
     lb6 = [10.0, 10.0, 2.0, 0.0, 0.0, 0.0]
     ub6 = [100.0, 100.0, 20.0, 200.0, 200.0, 100.0]
@@ -338,7 +305,6 @@ def main():
         'Nrr': 0.0,
     }
 
-    # --- 5 parámetros (simétrico, m11 = m22) ---
     Phi5, Tau5 = build_phi_tau_5param(acc_u, acc_v, acc_r, real_u, real_v, real_r, surge_force, yaw_moment)
     lb5 = [10.0, 2.0, 0.0, 0.0, 0.0]
     ub5 = [100.0, 20.0, 200.0, 200.0, 100.0]
@@ -356,11 +322,6 @@ def main():
         'Nrr': 0.0,
     }
 
-    # ------------------------------------------------------------------
-    # 2) Optimización con GRADIENTE DESCENDENTE, solo para el modelo de 9
-    #    parámetros, usando el error de simulación (no solo el residuo
-    #    lineal) como función de costo.
-    # ------------------------------------------------------------------
     scale_u = np.std(real_u) + 1e-6
     scale_v = np.std(real_v) + 1e-6
     scale_r = np.std(real_r) + 1e-6
@@ -373,9 +334,9 @@ def main():
         e_r = np.sqrt(np.mean((sim[:, 5] - real_r) ** 2)) / scale_r
         return e_u + e_v + e_r
 
-    print('\nRefinando el modelo de 9 parametros con gradiente descendente...')
+    print('\nRefining 9-parameter model with gradient descent...')
     cost_inicial = obj_9(theta9_ls)
-    print(f'  Costo inicial (minimos cuadrados): {cost_inicial:.6f}')
+    print(f'  Initial cost (least squares): {cost_inicial:.6f}')
 
     theta9_gd, cost_gd = gradient_descent(
         obj_9, theta9_ls, lb9, ub9, lr=0.05, max_iter=300, eps=1e-4, tol=1e-8
@@ -383,16 +344,13 @@ def main():
 
     if cost_gd < cost_inicial:
         theta9 = theta9_gd
-        print(f'  Costo final (gradiente descendente): {cost_gd:.6f}  -> mejora aceptada')
+        print(f'  Final cost (gradient descent): {cost_gd:.6f}  -> improvement accepted')
     else:
         theta9 = theta9_ls
-        print(f'  El gradiente descendente no mejoro el costo inicial; se conserva la solucion de minimos cuadrados')
+        print(f'  Gradient descent did not improve initial cost; retaining least-squares solution')
 
     model_9param = theta9_to_model(theta9)
 
-    # ------------------------------------------------------------------
-    # 3) Validación por simulación de los 3 modelos identificados
-    # ------------------------------------------------------------------
     simulated_9 = simulate(time, surge_force, yaw_moment, initial_state, model_9param)
     simulated_6 = simulate(time, surge_force, yaw_moment, initial_state, model_6param)
     simulated_5 = simulate(time, surge_force, yaw_moment, initial_state, model_5param)
@@ -401,30 +359,29 @@ def main():
         return float(np.sqrt(np.mean((sim_col - real_col) ** 2)))
 
     results = {
-        '9 parametros': simulated_9,
-        '6 parametros': simulated_6,
-        '5 parametros': simulated_5,
+        '9 parameters': simulated_9,
+        '6 parameters': simulated_6,
+        '5 parameters': simulated_5,
     }
 
-    print('\nRMSE de validacion por simulacion:')
+    print('\nSimulation validation RMSE:')
     for name, sim in results.items():
         print(f'  {name:14s}  u: {rmse(sim[:, 3], real_u):.6f} m/s   '
               f'v: {rmse(sim[:, 4], real_v):.6f} m/s   '
               f'r: {rmse(sim[:, 5], real_r):.6f} rad/s')
 
-    print("\nModelo identificado de 9 parametros (gradiente descendente):")
+    print("\nIdentified 9-parameter model (gradient descent):")
     for k, v in model_9param.items():
         print(f"  {k}: {v:.4f}")
 
-    print("\nModelo identificado de 6 parametros:")
+    print("\nIdentified 6-parameter model:")
     for k, v in model_6param.items():
         print(f"  {k}: {v:.4f}")
 
-    print("\nModelo identificado de 5 parametros:")
+    print("\nIdentified 5-parameter model:")
     for k, v in model_5param.items():
         print(f"  {k}: {v:.4f}")
 
-    # Exportar JSON con los 3 modelos
     all_models = {
         "full-dynamics": model_9param,
         "linear-6-parameters": model_6param,
@@ -433,11 +390,8 @@ def main():
     json_path = script_dir / 'identified_models.json'
     with open(json_path, 'w') as fp:
         json.dump(all_models, fp, indent=4)
-    print(f'\nModelos guardados en: {json_path}')
+    print(f'\nModels saved to: {json_path}')
 
-    # ------------------------------------------------------------------
-    # 4) Grafica comparativa: real vs los 3 modelos identificados
-    # ------------------------------------------------------------------
     output_plot = script_dir / 'velocity_comparison_3_models.pdf'
     figure, axes = plt.subplots(5, 1, figsize=(10, 12), sharex=True, dpi=200)
 
@@ -447,7 +401,6 @@ def main():
         '5 parametros': dict(linestyle=':', linewidth=1.4, color='tab:green'),
     }
 
-    # Surge u
     axis = axes[0]
     axis.plot(time, real_u, 'k-', linewidth=1.0, label='Real (CSV)')
     for name, sim in results.items():
@@ -456,14 +409,12 @@ def main():
     axis.grid(True, linestyle='--', alpha=0.6)
     axis.legend(loc='upper right', fontsize=8)
 
-    # Surge force
     axis = axes[1]
     axis.plot(time, surge_force, 'k-', linewidth=1.0, label='T_u (comando)')
     axis.set_ylabel('Fuerza surge T_u [N]')
     axis.grid(True, linestyle='--', alpha=0.6)
     axis.legend(loc='upper right', fontsize=8)
 
-    # Sway v
     axis = axes[2]
     axis.plot(time, real_v, 'k-', linewidth=1.0, label='Real (CSV)')
     for name, sim in results.items():
@@ -472,7 +423,6 @@ def main():
     axis.grid(True, linestyle='--', alpha=0.6)
     axis.legend(loc='upper right', fontsize=8)
 
-    # Yaw rate r
     axis = axes[3]
     axis.plot(time, real_r, 'k-', linewidth=1.0, label='Real (CSV)')
     for name, sim in results.items():
@@ -481,18 +431,16 @@ def main():
     axis.grid(True, linestyle='--', alpha=0.6)
     axis.legend(loc='upper right', fontsize=8)
 
-    # Yaw moment
     axis = axes[4]
     axis.plot(time, yaw_moment, 'k-', linewidth=1.0, label='T_r (comando)')
     axis.set_ylabel('Momento de giro T_r [N m]')
     axis.grid(True, linestyle='--', alpha=0.6)
     axis.legend(loc='upper right', fontsize=8)
 
-    axes[-1].set_xlabel('Tiempo [s]')
+    axes[-1].set_xlabel('Time [s]')
     figure.tight_layout()
     plt.close(figure)
-    print(f'Grafica: {output_plot}')
-
+    print(f'Plot: {output_plot}')
 
 if __name__ == '__main__':
     main()

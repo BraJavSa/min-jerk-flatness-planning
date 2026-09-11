@@ -1,20 +1,20 @@
 {
     "case1": {
-        "case": "Case 1",
-        "planning_ms": 0.15126,
-        "reconstruction_ms": 0.78479,
-        "total_time_ms": 0.93605
+        "case": "Mass Symmetry",
+        "planning_ms": 0.13806,
+        "reconstruction_ms": 0.51264,
+        "total_time_ms": 0.6507
     },
     "case2": {
-        "case": "Case 2",
-        "planning_ms": 0.18417,
-        "reconstruction_ms": 1.14466,
-        "total_time_ms": 1.32883
+        "case": "Pseudo-Flatness",
+        "planning_ms": 0.10986,
+        "reconstruction_ms": 1.08676,
+        "total_time_ms": 1.19662
     },
     "case3": {
-        "case": "Case 3",
-        "planning_ms": 830.9737490053521,
-        "reconstruction_ms": 34.706771999481134,
-        "total_time_ms": 865.6805210048333
+        "case": "Fictitious-Input",
+        "planning_ms": 650.2700769997318,
+        "reconstruction_ms": 26.382248997833813,
+        "total_time_ms": 676.6523259975656
     }
 }

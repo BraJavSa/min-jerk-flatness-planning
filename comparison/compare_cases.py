@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""
-Academic benchmark comparison of computation times across 3 cases:
-  - Case 1: case_1c/planning_metrics.json
-  - Case 2: case_2c/planning_metrics.json
-  - Case 3: case3/planning_metrics.json
-"""
-
 import os
 import json
 import numpy as np
@@ -20,21 +13,26 @@ FLATNESS_DIR = SCRIPT_DIR.parent
 CASES = [
     {
         'key': 'case1',
-        'label': 'Case 1',
-        'json_path': FLATNESS_DIR / 'case_1c' / 'planning_metrics.json',
+        'label': 'Mass Symmetry',
+        'json_path': (FLATNESS_DIR / 'Mass_Symmetry' / 'OfflineResponse' / 'planning_metrics.json')
+                     if (FLATNESS_DIR / 'Mass_Symmetry' / 'OfflineResponse' / 'planning_metrics.json').exists()
+                     else (FLATNESS_DIR / 'case_1c' / 'planning_metrics.json'),
     },
     {
         'key': 'case2',
-        'label': 'Case 2',
-        'json_path': FLATNESS_DIR / 'case_2c' / 'planning_metrics.json',
+        'label': 'Pseudo-Flatness',
+        'json_path': (FLATNESS_DIR / 'Pseudo-Flat_Reconstruction' / 'OfflineResponse' / 'planning_metrics.json')
+                     if (FLATNESS_DIR / 'Pseudo-Flat_Reconstruction' / 'OfflineResponse' / 'planning_metrics.json').exists()
+                     else (FLATNESS_DIR / 'case_2c' / 'planning_metrics.json'),
     },
     {
         'key': 'case3',
-        'label': 'Case 3',
-        'json_path': (FLATNESS_DIR / 'case_3' / 'planning_metrics.json') if (FLATNESS_DIR / 'case_3' / 'planning_metrics.json').exists() else (FLATNESS_DIR / 'case3' / 'planning_metrics.json'),
+        'label': 'Fictitious-Input',
+        'json_path': (FLATNESS_DIR / 'Fictitious-Input_Full_Actuation' / 'OfflineResponse' / 'planning_metrics.json')
+                     if (FLATNESS_DIR / 'Fictitious-Input_Full_Actuation' / 'OfflineResponse' / 'planning_metrics.json').exists()
+                     else (FLATNESS_DIR / 'case_3' / 'planning_metrics.json'),
     }
 ]
-
 
 def load_metrics():
     data = []
@@ -58,11 +56,9 @@ def load_metrics():
         })
     return data
 
-
 def main():
     metrics = load_metrics()
 
-    # Academic styling matching plot_identified_models.py
     plt.rcParams.update({
         'font.size': 10.0,
         'axes.labelsize': 10.0,
@@ -85,10 +81,9 @@ def main():
     x = np.arange(len(labels))
     width = 0.24
 
-    # Academic color palette
-    c_plan  = '#003366'  # Deep Navy Blue
-    c_recon = '#2E8B57'  # Sea Green
-    c_total = '#B22222'  # Firebrick Red
+    c_plan  = '#003366'
+    c_recon = '#2E8B57'
+    c_total = '#B22222'
 
     b1 = ax.bar(x - width, t_plan,  width, label='Planning',       color=c_plan,  edgecolor='black', linewidth=0.9)
     b2 = ax.bar(x,         t_recon, width, label='Reconstruction', color=c_recon, edgecolor='black', linewidth=0.9)
@@ -104,7 +99,6 @@ def main():
     ax.grid(True, which='both', axis='y', linestyle='--', alpha=0.6)
     ax.set_axisbelow(True)
 
-    # Format numeric label above each bar without units
     for bar_group in (b1, b2, b3):
         for rect in bar_group:
             val = rect.get_height()
@@ -142,7 +136,6 @@ def main():
     fig.savefig(out_pdf, format='pdf', dpi=300, bbox_inches='tight')
     plt.close(fig)
 
-    # Update summary JSON
     summary_data = {
         m['key']: {
             'case': m['label'],
@@ -158,7 +151,6 @@ def main():
     print(f"[Comparison] Single academic plot saved to: {out_png}")
     print(f"[Comparison] Vector PDF saved to: {out_pdf}")
     print(f"[Comparison] Summary JSON saved to: {summary_json}")
-
 
 if __name__ == '__main__':
     main()

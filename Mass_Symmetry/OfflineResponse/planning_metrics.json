@@ -1,0 +1,13 @@
+{
+    "case": "Case 1 (C)",
+    "solver_type": "QP (5-Param Model)",
+    "qp_planning_time_ms": 0.13806,
+    "flatness_reconstruction_time_ms": 0.51264,
+    "total_time_ms": 0.65070,
+    "tiempo_qp_ms": 0.13806,
+    "tiempo_planitud_ms": 0.51264,
+    "tiempo_total_ms": 0.65070,
+    "solve_time_ms": 0.65070,
+    "total_sim_time_s": 115.50000,
+    "num_samples": 3466
+}

@@ -1,9 +1,0 @@
-{
-    "case": "Case 1 (ROS2 Realtime)",
-    "samples_executed": 3466,
-    "duration_s": 115.50000000000001,
-    "tracking_error": {
-        "rmse_position_m": 16.395081977822755,
-        "max_position_error_m": 26.09437794853159
-    }
-}

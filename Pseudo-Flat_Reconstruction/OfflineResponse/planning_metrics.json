@@ -1,0 +1,13 @@
+{
+    "case": "Case 2 Pseudo-Flat (C)",
+    "solver_type": "QP (6-Param Pseudo-Flatness)",
+    "qp_planning_time_ms": 0.10986,
+    "pseudo_flatness_reconstruction_time_ms": 1.08676,
+    "total_time_ms": 1.19662,
+    "tiempo_qp_ms": 0.10986,
+    "tiempo_planitud_ms": 1.08676,
+    "tiempo_total_ms": 1.19662,
+    "solve_time_ms": 1.196622,
+    "total_sim_time_s": 115.500000,
+    "num_samples": 3466
+}

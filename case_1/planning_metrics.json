@@ -1,7 +1,0 @@
-{
-    "case": "Case 1",
-    "solver_type": "QP (5-Param Model)",
-    "solve_time_ms": 121.24475599557627,
-    "total_sim_time_s": 115.5,
-    "num_samples": 3466
-}

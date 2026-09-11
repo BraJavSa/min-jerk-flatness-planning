@@ -1,0 +1,17 @@
+{
+    "case": "Case 1 Open-Loop (C)",
+    "solver_type": "QP (5-Param Model) -> 9-Param Plant",
+    "position_rmse_m": 16.460004,
+    "max_position_error_m": 25.637873,
+    "heading_rmse_rad": 1.447364,
+    "heading_rmse_deg": 82.9278,
+    "surge_rmse_mps": 0.194662,
+    "sway_rmse_mps": 0.039130,
+    "yaw_rate_rmse_radps": 0.061973,
+    "qp_time_ms": 0.10000,
+    "simulation_time_ms": 0.42925,
+    "tiempo_qp_ms": 0.10000,
+    "tiempo_simulacion_ms": 0.42925,
+    "total_sim_time_s": 115.50000,
+    "num_samples": 3466
+}

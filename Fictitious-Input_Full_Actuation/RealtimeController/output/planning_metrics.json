@@ -1,0 +1,16 @@
+{
+    "case": "Case 3 Realtime",
+    "solver_type": "CasADi NLP (IPOPT) seeded from live pose",
+    "tiempo_qp_ms": 704.2661600025895,
+    "tiempo_planitud_ms": 28.695644999970682,
+    "tiempo_total_ms": 732.9618050025601,
+    "solve_time_ms": 732.9618050025601,
+    "total_sim_time_s": 115.5,
+    "num_samples": 3466,
+    "x0": 0.000163,
+    "y0": 0.0,
+    "psi0": 0.0,
+    "u0": -3.6e-05,
+    "v0": -0.0,
+    "r0": 0.0
+}

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys
 import json
 import csv
@@ -18,12 +17,10 @@ MOTOR = {
     'max_rev': -28.4393,
 }
 
-
 def branch_thrust(command, parameters):
     return parameters['A'] + (parameters['K'] - parameters['A']) / (
         parameters['C'] + np.exp(-parameters['B'] * (command - parameters['M']))
     ) ** (1.0 / parameters['v'])
-
 
 def thrust_from_command(command):
     result = np.zeros_like(command, dtype=float)
@@ -35,14 +32,12 @@ def thrust_from_command(command):
         result[negative] = branch_thrust(command[negative], MOTOR['neg'])
     return np.clip(result, MOTOR['max_rev'], MOTOR['max_fwd'])
 
-
 def generalized_forces(left_command, right_command):
     left_thrust = thrust_from_command(left_command)
     right_thrust = thrust_from_command(right_command)
     surge_force = 2.0 * (left_thrust + right_thrust)
     yaw_moment = 0.29 * (-2.0 * left_thrust + 2.0 * right_thrust)
     return surge_force, yaw_moment
-
 
 def clean_outliers(signal, maximum=5.0):
     outliers = np.abs(signal) > maximum
@@ -54,7 +49,6 @@ def clean_outliers(signal, maximum=5.0):
         nearest = valid_indices[np.argmin(np.abs(valid_indices - index))]
         cleaned[index] = signal[nearest]
     return cleaned
-
 
 def derivatives(state, surge_force, yaw_moment, model):
     _, _, yaw, u, v, r = state
@@ -80,7 +74,6 @@ def derivatives(state, surge_force, yaw_moment, model):
         dr,
     ])
 
-
 def simulate(time, surge_force, yaw_moment, initial_state, model):
     state = np.zeros((len(time), 6))
     state[0] = initial_state
@@ -95,7 +88,6 @@ def simulate(time, surge_force, yaw_moment, initial_state, model):
         k4 = derivatives(current + dt * k3, surge_force[index + 1], yaw_moment[index + 1], model)
         state[index + 1] = current + dt * (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0
     return state
-
 
 def load_latest_dataset(data_dir):
     data_path = Path(data_dir)
@@ -132,23 +124,19 @@ def load_latest_dataset(data_dir):
 
     raise ValueError(f'No valid dataset in {data_dir}. Last error: {last_err}')
 
-
 def main():
     script_dir = Path(__file__).resolve().parent
 
-    # argv[1] -> carpeta o CSV a usar (por defecto: la carpeta del script)
-    # argv[2] -> ruta al identified_models.json (por defecto: junto al script)
     data_dir = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else script_dir
     models_path = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else script_dir / 'identified_models.json'
 
     csv_path, rows = load_latest_dataset(data_dir)
     print(f'CSV: {csv_path}')
-    print(f'Modelos: {models_path}')
+    print(f'Models: {models_path}')
 
     with models_path.open() as fp:
         model_data = json.load(fp)
 
-    # Mismo procesamiento de datos que en la identificacion
     time = np.asarray([float(row['t']) for row in rows])
     time -= time[0]
     real_u = clean_outliers(np.asarray([float(row['vx']) for row in rows]))
@@ -168,8 +156,6 @@ def main():
         real_r[0],
     ])
 
-    # Simulacion de los 3 modelos identificados (ya vienen en formato
-    # interno m11/m22/m33/Xu/Xuu/Yv/Yvv/Nr/Nrr, sin conversion necesaria)
     order = ('symmetric-5-parameters', 'linear-6-parameters', 'full-dynamics')
     simulations = {
         name: simulate(time, surge_force, yaw_moment, initial_state, model_data[name])
@@ -185,14 +171,10 @@ def main():
         for name, sim in simulations.items()
     }
 
-    print('\nRMSE de validacion por simulacion:')
+    print('\nSimulation validation RMSE:')
     for name, values in rmse.items():
         print(f'  {name:24s}  u: {values[0]:.6f} m/s   v: {values[1]:.6f} m/s   r: {values[2]:.6f} rad/s')
 
-    # ------------------------------------------------------------------
-    # Grafica: misma estetica que identified_models_comparison.pdf
-    # (2x2: surge, sway, yaw rate + barras de RMSE, sin T_u/T_r)
-    # ------------------------------------------------------------------
     plt.rcParams.update({
         'font.size': 10.0,
         'axes.labelsize': 10.0,
@@ -265,8 +247,7 @@ def main():
     output_plot = script_dir / 'identified_models_comparison.pdf'
     figure.savefig(output_plot, format='pdf', dpi=300, bbox_inches='tight')
     plt.close(figure)
-    print(f'\nGrafica guardada en: {output_plot}')
-
+    print(f'\nFigure saved to: {output_plot}')
 
 if __name__ == '__main__':
     main()

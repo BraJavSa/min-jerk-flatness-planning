@@ -1,0 +1,15 @@
+{
+    "case": "Case 1 (ROS2 Realtime MPC, N=30, Q=diag(200,200,200,1,1,5))",
+    "horizon_steps": 30,
+    "samples_executed": 3466,
+    "duration_s": 115.5,
+    "solve_time_ms": {
+        "mean_solve_ms": 0.0139411,
+        "max_solve_ms": 0.088266,
+        "headroom_margin_pct": 99.9582
+    },
+    "tracking_error": {
+        "rmse_position_m": 0.301906,
+        "max_position_error_m": 0.348713
+    }
+}
