@@ -22,6 +22,7 @@ plt.rcParams.update({
 
 COLOR_REAL = '#000000'
 COLOR_DESIRED = '#B22222'
+COLOR_OPENLOOP = '#2563EB'
 COLOR_NAVY = '#003366'
 COLOR_AMBER = '#D97706'
 COLOR_GRAY = '#6B7280'
@@ -173,9 +174,35 @@ def plot_tracking_results(csv_path=None, output_png=None, case_title="Case 2 (9-
         wp_x = base_wp[:, 0]
         wp_y = base_wp[:, 1]
 
+    ol_data = None
+    ol_candidates = [
+        script_dir.parent / 'OpenloopResponse' / 'case2_openloop_results.csv',
+        script_dir / 'output' / 'case2_openloop_results.csv',
+        script_dir / 'case2_openloop_results.csv',
+    ]
+    for cand in ol_candidates:
+        if cand.exists():
+            try:
+                ol_data = load_tracking_data(cand)
+                break
+            except Exception:
+                pass
+
+    if ol_data is not None:
+        t_ol = ol_data['t']
+        x_ol = clean_outliers(ol_data['x_real'], max_value=100.0)
+        y_ol = clean_outliers(ol_data['y_real'], max_value=100.0)
+        u_ol = clean_outliers(ol_data['u_real'])
+        v_ol = clean_outliers(ol_data['v_real'])
+        r_ol = clean_outliers(ol_data['r_real'])
+    else:
+        t_ol, x_ol, y_ol, u_ol, v_ol, r_ol = None, None, None, None, None, None
+
     ax = axes[0, 0]
-    ax.plot(x_ref, y_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label='Desired (Reference)', zorder=2)
-    ax.plot(x_real, y_real, color=COLOR_REAL, linestyle='--', linewidth=1.3, label='Real (Odometry)', zorder=4)
+    ax.plot(x_ref, y_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label='Desired', zorder=2)
+    if ol_data is not None:
+        ax.plot(x_ol, y_ol, color=COLOR_OPENLOOP, linestyle='-.', linewidth=1.3, label='Open-Loop Response', zorder=3)
+    ax.plot(x_real, y_real, color=COLOR_REAL, linestyle='--', linewidth=1.3, label='Closed-Loop Response', zorder=4)
     ax.scatter(wp_x, wp_y, color='#FACC15', s=45, marker='o', edgecolors='black', linewidths=1.0, label='Waypoints', zorder=6)
     ax.scatter(x_ref[0], y_ref[0], color='#10B981', s=45, marker='o', edgecolors='black', linewidths=0.8, label='Start', zorder=7)
     ax.scatter(x_ref[-1], y_ref[-1], color='#DC2626', s=55, marker='X', edgecolors='black', linewidths=0.8, label='Goal', zorder=7)
@@ -188,8 +215,10 @@ def plot_tracking_results(csv_path=None, output_png=None, case_title="Case 2 (9-
     ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 
     ax = axes[1, 0]
-    ax.plot(t, u_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Desired $u$', zorder=2)
-    ax.plot(t, u_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label=r'Real $u$', zorder=4)
+    ax.plot(t, u_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label='Desired', zorder=2)
+    if ol_data is not None:
+        ax.plot(t_ol, u_ol, color=COLOR_OPENLOOP, linestyle='-.', linewidth=1.3, label='Open-Loop Response', zorder=3)
+    ax.plot(t, u_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label='Closed-Loop Response', zorder=4)
     ax.set_xlabel(r'Time $t \ [\mathrm{s}]$')
     ax.set_ylabel(r'Surge Velocity $u \ [\mathrm{m/s}]$')
     ax.set_xlim(0, t[-1])
@@ -198,8 +227,10 @@ def plot_tracking_results(csv_path=None, output_png=None, case_title="Case 2 (9-
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
     ax = axes[2, 0]
-    ax.plot(t, v_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Desired $v$', zorder=2)
-    ax.plot(t, v_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label=r'Real $v$', zorder=4)
+    ax.plot(t, v_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label='Desired', zorder=2)
+    if ol_data is not None:
+        ax.plot(t_ol, v_ol, color=COLOR_OPENLOOP, linestyle='-.', linewidth=1.3, label='Open-Loop Response', zorder=3)
+    ax.plot(t, v_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label='Closed-Loop Response', zorder=4)
     ax.set_xlabel(r'Time $t \ [\mathrm{s}]$')
     ax.set_ylabel(r'Sway Velocity $v \ [\mathrm{m/s}]$')
     ax.set_xlim(0, t[-1])
@@ -208,8 +239,10 @@ def plot_tracking_results(csv_path=None, output_png=None, case_title="Case 2 (9-
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
     ax = axes[3, 0]
-    ax.plot(t, r_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Desired $r$', zorder=2)
-    ax.plot(t, r_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label=r'Real $r$', zorder=4)
+    ax.plot(t, r_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label='Desired', zorder=2)
+    if ol_data is not None:
+        ax.plot(t_ol, r_ol, color=COLOR_OPENLOOP, linestyle='-.', linewidth=1.3, label='Open-Loop Response', zorder=3)
+    ax.plot(t, r_real, color=COLOR_REAL, linestyle='--', linewidth=1.2, label='Closed-Loop Response', zorder=4)
     ax.set_xlabel(r'Time $t \ [\mathrm{s}]$')
     ax.set_ylabel(r'Yaw Rate $r \ [\mathrm{rad/s}]$')
     ax.set_xlim(0, t[-1])
@@ -266,8 +299,8 @@ def plot_tracking_results(csv_path=None, output_png=None, case_title="Case 2 (9-
     ax_time.legend(loc='lower right', frameon=True, edgecolor='black', fontsize=6.8)
 
     ax = axes[2, 1]
-    ax.plot(t, tau_u_applied, color=COLOR_REAL, linestyle='--', linewidth=1.2, label=r'Real $\tau_u$', zorder=2)
-    ax.plot(t, tau_u_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Desired $\tau_u$', zorder=4)
+    ax.plot(t, tau_u_applied, color=COLOR_REAL, linestyle='--', linewidth=1.2, label='Applied Input', zorder=2)
+    ax.plot(t, tau_u_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Planned $\tau_u$', zorder=4)
     ax.set_xlabel(r'Time $t \ [\mathrm{s}]$')
     ax.set_ylabel(r'Surge Force $\tau_u \ [\mathrm{N}]$')
     ax.set_xlim(0, t[-1])
@@ -276,8 +309,8 @@ def plot_tracking_results(csv_path=None, output_png=None, case_title="Case 2 (9-
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 
     ax = axes[3, 1]
-    ax.plot(t, tau_r_applied, color=COLOR_REAL, linestyle='--', linewidth=1.2, label=r'Real $\tau_r$', zorder=2)
-    ax.plot(t, tau_r_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Desired $\tau_r$', zorder=4)
+    ax.plot(t, tau_r_applied, color=COLOR_REAL, linestyle='--', linewidth=1.2, label='Applied Input', zorder=2)
+    ax.plot(t, tau_r_ref, color=COLOR_DESIRED, linestyle='-', linewidth=1.8, label=r'Planned $\tau_r$', zorder=4)
     ax.set_xlabel(r'Time $t \ [\mathrm{s}]$')
     ax.set_ylabel(r'Yaw Moment $\tau_r \ [\mathrm{N\cdot m}]$')
     ax.set_xlim(0, t[-1])
