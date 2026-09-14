@@ -1,21 +1,15 @@
 {
-    "case": "Case 3 (Pure Flatness Receding-Horizon NLP MPC, N=30)",
+    "case": "Case 3 (Fictitious-Input 6-Param Pure Flatness Receding-Horizon NLP MPC, N=30)",
     "horizon_steps": 30,
     "samples_executed": 3466,
-    "duration_s": 115.50000000000001,
+    "duration_s": 115.503,
     "solve_time_ms": {
-        "mean_solve_ms": 7.704870538079853,
-        "max_solve_ms": 13.503335001587402,
-        "headroom_margin_pct": 76.88538838576045
+        "mean_solve_ms": 10.6719,
+        "max_solve_ms": 46.8869,
+        "headroom_margin_pct": 67.9842
     },
     "tracking_error": {
-        "rmse_position_m": 0.01109540337520921,
-        "max_position_error_m": 0.019182476701226896
-    },
-    "underactuation_constraint": {
-        "epsilon_bound_N": 0.15,
-        "max_abs_tau_v_N": 0.14999919113825722,
-        "mean_abs_tau_v_N": 0.136695981142764,
-        "constraint_satisfied": true
+        "rmse_position_m": 0.0711614,
+        "max_position_error_m": 0.094116
     }
 }

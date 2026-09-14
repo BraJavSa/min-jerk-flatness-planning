@@ -77,7 +77,7 @@ public:
             std::bind(&Case2MpcNode::controlLoop, this));
 
         RCLCPP_INFO(this->get_logger(),
-                    "Case 2 MPC Node initialized (Horizon N=%d, dt=%.4f s, Q=diag(200,200,200,1,1,5)). "
+                    "Case 2 MPC Node initialized (Horizon N=%d, dt=%.4f s, 9-Param Pure Flatness Receding-Horizon NLP MPC). "
                     "Waiting for reference trajectory and odometry...",
                     NmpcFlatness::N, dt_);
     }
@@ -234,17 +234,20 @@ private:
         };
 
         std::vector<std::array<double, 3>> eta_ref, nu_ref;
+        std::vector<std::array<double, 2>> tau_ref;
         eta_ref.reserve(NmpcFlatness::N);
         nu_ref.reserve(NmpcFlatness::N);
+        tau_ref.reserve(NmpcFlatness::N);
         for (int k = 0; k < NmpcFlatness::N; k++) {
             size_t idx = std::min(step_idx_ + static_cast<size_t>(k), ref_.size() - 1);
             eta_ref.push_back({ref_[idx].x, ref_[idx].y, ref_[idx].psi});
             nu_ref.push_back({ref_[idx].u, ref_[idx].v, ref_[idx].r});
+            tau_ref.push_back({ref_[idx].tau_u, ref_[idx].tau_r});
         }
 
         double solve_ms = 0.0;
         std::array<double, NmpcFlatness::NU> u_opt =
-            nmpc_->solve(x0, eta_ref, nu_ref, u_prev_, &solve_ms);
+            nmpc_->solve(x0, eta_ref, nu_ref, u_prev_, &solve_ms, tau_ref);
         u_prev_ = u_opt;
 
         double T1 = u_opt[0], T2 = u_opt[1];
@@ -258,8 +261,8 @@ private:
 
         double T1_act = thrust_from_cmd_richards(cmd_l);
         double T2_act = thrust_from_cmd_richards(cmd_r);
-        double tau_u_app = T1_act + T2_act;
-        double tau_r_app = (T1_act - T2_act) * dP_9;
+        double tau_u_app = SURGE_GAIN * (T1_act + T2_act);
+        double tau_r_app = 2.0 * YAW_ARM * (T1_act - T2_act);
 
         log_t_.push_back(elapsed);
         log_x_real_.push_back(x0[0]); log_y_real_.push_back(x0[1]); log_psi_real_.push_back(x0[2]);
@@ -372,7 +375,7 @@ private:
         std::ofstream jf(json_path);
         if (jf.is_open()) {
             jf << "{\n"
-               << "    \"case\": \"Case 2 (ROS2 Realtime MPC, N=30, Q=diag(200,200,200,1,1,5))\",\n"
+               << "    \"case\": \"Case 2 (Pseudo-Flatness 9-Param Pure Flatness Receding-Horizon NLP MPC, N=30)\",\n"
                << "    \"horizon_steps\": " << NmpcFlatness::N << ",\n"
                << "    \"samples_executed\": " << log_t_.size() << ",\n"
                << "    \"duration_s\": " << log_t_.back() << ",\n"

@@ -1,38 +1,48 @@
+#!/usr/bin/env python3
 import numpy as np
 
-m11_real = 21.128198860500447
-m22_real = 22.662800592601826
-m33_real = 6.55006306556083
-Xu_real = 36.76758792354202
-Yv_real = 32.582835049486235
-Nr_real = 8.913911138235079
-dP = 0.26
+# Modelo USV de 6 parámetros (Fictitious-Input Full Actuation)
+m11_6 = 21.128198860500447
+m22_6 = 22.662800592601826
+m33_6 = 6.55006306556083
+Xu_6  = 36.76758792354202
+Yv_6  = 32.582835049486235
+Nr_6  = 8.913911138235079
+dP_6  = 0.29
 
-m11_6 = m11_real
-m22_6 = m22_real
-m33_6 = m33_real
-Xu_6 = Xu_real
-Yv_6 = Yv_real
-Nr_6 = Nr_real
-dP_6 = dP
+SURGE_GAIN = 2.0
+YAW_ARM = 0.29
 
-m11_full = 27.6527951473284
-m22_full = 30.76677961987949
-m33_full = 6.422382544661223
-Xu_full = 15.657929738187262
-Xuu_full = 14.389382088099678
-Yv_full = 42.20370985895385
-Yvv_full = 0.7067569214632512
-Nr_full = 4.940560878487763
-Nrr_full = 3.1501144317267036
+m11_real = m11_6
+m22_real = m22_6
+m33_real = m33_6
+Xu_real = Xu_6
+Yv_real = Yv_6
+Nr_real = Nr_6
+dP = dP_6
 
 SAMPLE_RATE_HZ = 30.0
 DT_SIM = 1.0 / SAMPLE_RATE_HZ
 
-A_POS, K_POS, B_POS, M_POS, V_POS, C_POS = -12.07098855, 73.72259622, 14.20242467, 0.99474311, 6.83239913, 1.0
-A_NEG, K_NEG, B_NEG, M_NEG, V_NEG, C_NEG = -70.9610860, 7.47710923, 2.69365001, -3.79303820, 4.09908178e-04, 1.0
-T_MAX = 65.92
-T_MIN = -49.38
+A_POS = 1e-06
+K_POS = 40.0209
+B_POS = 2.6249
+M_POS = 1e-05
+V_POS = 0.1615
+C_POS = 0.9432
+
+A_NEG = -31.4990
+K_NEG = -1e-05
+B_NEG = 3.6986
+M_NEG = -1.0
+V_NEG = 0.3264
+C_NEG = 0.9713
+
+T_MAX = 36.3827
+T_MIN = -28.4393
+
+def clip(x, lo, hi):
+    return np.clip(x, lo, hi)
 
 def thrust_from_cmd_richards(cmd):
     cmd_arr = np.asarray(cmd, dtype=float)
@@ -42,6 +52,7 @@ def thrust_from_cmd_richards(cmd):
     T = np.zeros_like(cmd_arr)
     pos = cmd_arr > 0.01
     neg = cmd_arr < -0.01
+
     if np.any(pos):
         cp = cmd_arr[pos]
         T[pos] = A_POS + (K_POS - A_POS) / ((C_POS + np.exp(-B_POS * (cp - M_POS))) ** (1.0 / V_POS))
@@ -58,15 +69,16 @@ def cmd_from_thrust_richards(T_target):
     T_val = float(np.clip(T_target, T_MIN, T_MAX))
     if abs(T_val) < 1e-3:
         return 0.0
-    if T_val > 0:
+
+    if T_val > 0.0:
         val = ((K_POS - A_POS) / (T_val - A_POS)) ** V_POS - C_POS
-        if val <= 0:
+        if val <= 0.0:
             return 1.0
         c = M_POS - (1.0 / B_POS) * np.log(val)
         return float(np.clip(c, 0.0, 1.0))
     else:
         val = ((K_NEG - A_NEG) / (T_val - A_NEG)) ** V_NEG - C_NEG
-        if val <= 0:
+        if val <= 0.0:
             return -1.0
         c = M_NEG - (1.0 / B_NEG) * np.log(val)
         return float(np.clip(c, -1.0, 0.0))
@@ -76,5 +88,7 @@ def cmd_from_thrust_array(T_array):
     c_flat = np.array([cmd_from_thrust_richards(Tv) for Tv in T_flat])
     return c_flat.reshape(np.asarray(T_array).shape)
 
+thrust_from_cmd = thrust_from_cmd_richards
+cmd_from_thrust = cmd_from_thrust_richards
 thrust_from_cmd_poly = thrust_from_cmd_richards
 cmd_from_thrust_poly = cmd_from_thrust_richards

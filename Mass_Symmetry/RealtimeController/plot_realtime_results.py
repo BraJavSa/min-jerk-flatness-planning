@@ -266,32 +266,47 @@ def plot_tracking_results(csv_path=None, output_png=None, case_title="Mass Symme
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
     ax_time = axes[1, 1]
-    ax_time.plot(t, solve_us, color=COLOR_NAVY, linestyle='-', linewidth=1.0, alpha=0.85,
+    is_ms_scale = (np.mean(solve_ms) > 0.5)
+
+    if is_ms_scale:
+        disp_time = solve_ms
+        mean_time = np.mean(solve_ms)
+        max_time = np.max(solve_ms)
+        unit_str = r'\mathrm{ms}'
+        y_fmt = '%.2f'
+        ax_time.set_ylabel(r'Horizon Solve Time $t_{\mathrm{solve}} \ [\mathrm{ms}]$', color=COLOR_NAVY)
+    else:
+        disp_time = solve_us
+        mean_time = mean_solve_us
+        max_time = max_solve_us
+        unit_str = r'\mu\mathrm{s}'
+        y_fmt = '%.1f'
+        ax_time.set_ylabel(r'Horizon Solve Time $t_{\mathrm{solve}} \ [\mu\mathrm{s}]$', color=COLOR_NAVY)
+
+    ax_time.plot(t, disp_time, color=COLOR_NAVY, linestyle='-', linewidth=1.0, alpha=0.85,
                  label=r'Solve Time $(N=30)$', zorder=3)
-    ax_time.fill_between(t, 0, solve_us, color='#BFDBFE', alpha=0.4, zorder=2)
-    ax_time.axhline(mean_solve_us, color=COLOR_DESIRED, linestyle='--', linewidth=1.3,
-                    label=rf'Mean: {mean_solve_us:.1f} $\mu\mathrm{{s}}$ ({mean_solve_us/1000.0:.4f} ms)', zorder=4)
-    ax_time.axhline(max_solve_us, color=COLOR_AMBER, linestyle=':', linewidth=1.1,
-                    label=rf'Peak: {max_solve_us:.1f} $\mu\mathrm{{s}}$', zorder=4)
+    ax_time.fill_between(t, 0, disp_time, color='#BFDBFE', alpha=0.4, zorder=2)
+    ax_time.axhline(mean_time, color=COLOR_DESIRED, linestyle='--', linewidth=1.3,
+                    label=rf'Mean: {mean_time:.2f} ${unit_str}$', zorder=4)
+    ax_time.axhline(max_time, color=COLOR_AMBER, linestyle=':', linewidth=1.1,
+                    label=rf'Peak: {max_time:.2f} ${unit_str}$', zorder=4)
 
     ax_time.set_xlabel(r'Time $t \ [\mathrm{s}]$')
-    ax_time.set_ylabel(r'Horizon Solve Time $t_{\mathrm{solve}} \ [\mu\mathrm{s}]$', color=COLOR_NAVY)
     ax_time.set_xlim(0, t[-1])
-
-    ax_time.set_ylim(0, max(8.0, max_solve_us * 1.35))
+    ax_time.set_ylim(0, max(1.0 if is_ms_scale else 8.0, max_time * 1.35))
     ax_time.tick_params(axis='y', labelcolor=COLOR_NAVY)
-    ax_time.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    ax_time.yaxis.set_major_formatter(FormatStrFormatter(y_fmt))
     ax_time.grid(True, linestyle='--', alpha=0.6)
 
     ax_pct = ax_time.twinx()
-    pct_max = (max(8.0, max_solve_us * 1.35) / (t_period_ms * 1000.0)) * 100.0
+    pct_max = (max(1.0 if is_ms_scale else 8.0, max_time * 1.35) / (t_period_ms if is_ms_scale else (t_period_ms * 1000.0))) * 100.0
     ax_pct.set_ylim(0, pct_max)
     ax_pct.set_ylabel(r'Cycle Utilization $[\%]$', color='#4B5563')
     ax_pct.tick_params(axis='y', labelcolor='#4B5563')
-    ax_pct.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+    ax_pct.yaxis.set_major_formatter(FormatStrFormatter('%.1f' if is_ms_scale else '%.3f'))
 
     budget_badge = (
-        r"$\bf{30\,Hz\ Budget:}\ 33.33\,\mathrm{ms}\ (33,333\,\mu\mathrm{s})$" "\n"
+        r"$\bf{30\,Hz\ Budget:}\ 33.33\,\mathrm{ms}$" "\n"
         rf"$\bf{{Full\ Horizon:}}\ N=30\ \mathrm{{steps}}\ (1.0\,\mathrm{{s}})$" "\n"
         rf"$\bf{{Headroom\ Margin:}}\ >{headroom_pct:.2f}\%$"
     )

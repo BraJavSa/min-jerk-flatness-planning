@@ -27,7 +27,7 @@ def _setup_import_paths():
 _setup_import_paths()
 
 from usv_params import DT_SIM
-from trajectory_nlp import FlatnessNLP
+from min_jerk_qp import MinJerkQP
 from flatness_reconstruct import reconstruct_flatness_full
 
 WAYPOINTS_LOCAL = np.array([
@@ -36,7 +36,6 @@ WAYPOINTS_LOCAL = np.array([
 ])
 BASE_TIMES = np.array([0.0, 7.0, 14.0, 20.0, 27.0, 33.0, 40.0, 48.0, 55.0])
 TIME_SCALE = 2.10
-EPSILON_TV = 0.1
 
 def build_world_waypoints(x0, y0, psi0):
     c, s = np.cos(psi0), np.sin(psi0)
@@ -59,32 +58,36 @@ def main():
     c0, s0 = np.cos(psi0), np.sin(psi0)
     vx0 = u0 * c0 - v0 * s0
     vy0 = u0 * s0 + v0 * c0
+    if np.hypot(vx0, vy0) < 0.05:
+        vx0 = 0.1 * c0
+        vy0 = 0.1 * s0
     v0_vec = (vx0, vy0)
 
     dir_f = waypoints[8] - waypoints[7]
-    dir_f_unit = dir_f / np.linalg.norm(dir_f)
+    dir_f_norm = np.linalg.norm(dir_f)
+    dir_f_unit = dir_f / dir_f_norm if dir_f_norm > 1e-6 else np.array([1.0, 0.0])
     vf_vec = tuple(0.01 * dir_f_unit)
 
     t_start = time.perf_counter()
-    planner = FlatnessNLP(waypoints, times, vel_start=v0_vec, vel_end=vf_vec,
-                          epsilon=EPSILON_TV, r_start=r0)
+    planner = MinJerkQP(waypoints, times, vel_start=v0_vec, vel_end=vf_vec,
+                        psi_start=psi0, r_start=r0)
     t_sim, pos, vel, acc, jerk = planner.sample(dt_sim=DT_SIM)
-    nlp_time_ms = (time.perf_counter() - t_start) * 1000.0
+    qp_time_ms = (time.perf_counter() - t_start) * 1000.0
 
     t_fl0 = time.perf_counter()
     flat_data = reconstruct_flatness_full(pos, vel, acc, jerk, t_sim)
     flatness_time_ms = (time.perf_counter() - t_fl0) * 1000.0
-    total_time_ms = nlp_time_ms + flatness_time_ms
+    total_time_ms = qp_time_ms + flatness_time_ms
 
     print("==================================================")
-    print("CASE 3 REALTIME MPC - NLP Trajectory Planning")
+    print("CASE 3 REALTIME MPC - Python QP Trajectory Planning")
     print("--------------------------------------------------")
     print(f"Initial Pose: x0={x0:.3f} m, y0={y0:.3f} m, psi0={np.degrees(psi0):.2f} deg")
     print(f"Initial Vel:  u0={u0:.3f} m/s, v0={v0:.3f} m/s, r0={r0:.3f} rad/s")
     print(f"Samples:      {len(t_sim)} (dt={DT_SIM:.5f} s, T={t_sim[-1]-t_sim[0]:.3f} s)")
-    print(f"NLP Solve:    {nlp_time_ms:.2f} ms")
-    print(f"Flatness:     {flatness_time_ms:.2f} ms")
-    print(f"Total Time:   {total_time_ms:.2f} ms")
+    print(f"QP Solve:     {qp_time_ms:.4f} ms")
+    print(f"Flatness:     {flatness_time_ms:.4f} ms")
+    print(f"Total Time:   {total_time_ms:.4f} ms")
     print("==================================================")
 
     eta_ref = flat_data['eta']
@@ -116,11 +119,18 @@ def main():
             writer_wp.writerow([f'{wp[0]:.6f}', f'{wp[1]:.6f}'])
 
     metrics = {
-        'case': 'Case 3 (NLP/IPOPT + 6-Parameter Flatness)',
+        'case': 'Case 3 Realtime (Python)',
+        'solver_type': 'QP (6-Param Model in Python)',
+        'QP Planning Time': f'{qp_time_ms:.5f} ms',
+        'Flatness Reconstruction Time': f'{flatness_time_ms:.5f} ms',
+        'Total Time': f'{total_time_ms:.5f} ms',
+        'tiempo_qp_ms': float(qp_time_ms),
+        'tiempo_planitud_ms': float(flatness_time_ms),
+        'tiempo_total_ms': float(total_time_ms),
         'duration_s': float(t_sim[-1] - t_sim[0]),
         'num_samples': len(t_sim),
         'planning_time_ms': {
-            'nlp_solve_ms': nlp_time_ms,
+            'qp_solve_ms': qp_time_ms,
             'flatness_reconstruction_ms': flatness_time_ms,
             'total_planning_ms': total_time_ms
         }

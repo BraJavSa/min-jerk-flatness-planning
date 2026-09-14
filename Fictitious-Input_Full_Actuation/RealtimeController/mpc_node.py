@@ -35,6 +35,7 @@ def _setup_import_paths():
 
 _setup_import_paths()
 
+from usv_params import SURGE_GAIN, YAW_ARM, thrust_from_cmd_richards
 from nmpc_flatness import NmpcFlatness
 
 def euler_from_quaternion(x, y, z, w):
@@ -176,6 +177,7 @@ class Case3MpcNode(Node):
         n_horizon = self.nmpc.N
         eta_ref = np.zeros((n_horizon, 3))
         nu_ref = np.zeros((n_horizon, 3))
+        tau_ref = np.zeros((n_horizon, 2))
 
         total_ref = len(self.ref_data)
         for k in range(n_horizon):
@@ -183,8 +185,9 @@ class Case3MpcNode(Node):
             r_k = self.ref_data[idx]
             eta_ref[k] = [float(r_k['x_ref']), float(r_k['y_ref']), float(r_k['psi_ref'])]
             nu_ref[k] = [float(r_k['u_ref']), float(r_k['v_ref']), float(r_k['r_ref'])]
+            tau_ref[k] = [float(r_k.get('tau_u_ref', 0.0)), float(r_k.get('tau_r_ref', 0.0))]
 
-        u_opt, cmd_opt, tau_cmd, solve_ms = self.nmpc.solve(x0, eta_ref, nu_ref, self.u_prev)
+        u_opt, cmd_opt, tau_cmd, solve_ms = self.nmpc.solve(x0, eta_ref, nu_ref, self.u_prev, tau_ref=tau_ref)
         self.u_prev = np.array(u_opt)
 
         cmd_l, cmd_r = cmd_opt
@@ -211,11 +214,16 @@ class Case3MpcNode(Node):
         self.log_v_ref.append(float(r0['v_ref']))
         self.log_r_ref.append(float(r0['r_ref']))
 
+        T1_act = thrust_from_cmd_richards(cmd_l)
+        T2_act = thrust_from_cmd_richards(cmd_r)
+        tau_u_app = float(SURGE_GAIN * (T1_act + T2_act))
+        tau_r_app = float(2.0 * YAW_ARM * (T1_act - T2_act))
+
         self.log_tau_u_ref.append(float(r0.get('tau_u_ref', 0.0)))
         self.log_tau_r_ref.append(float(r0.get('tau_r_ref', 0.0)))
-        self.log_tau_u_app.append(tau_u_cmd)
+        self.log_tau_u_app.append(tau_u_app)
         self.log_tau_v_app.append(tau_v_cmd)
-        self.log_tau_r_app.append(tau_r_cmd)
+        self.log_tau_r_app.append(tau_r_app)
 
         self.log_cmd_l.append(cmd_l)
         self.log_cmd_r.append(cmd_r)

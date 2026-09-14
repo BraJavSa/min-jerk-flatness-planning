@@ -18,6 +18,44 @@ def euler_from_quaternion(x, y, z, w):
     t4 = +1.0 - 2.0 * (y * y + z * z)
     return math.atan2(t3, t4)
 
+def find_main_realtime_script() -> Path:
+    candidates = []
+    
+    # 1. Package share directory
+    try:
+        from ament_index_python.packages import get_package_share_directory
+        share_dir = Path(get_package_share_directory('min-jerk-flatness-planning'))
+        candidates.append(share_dir / 'Fictitious-Input_Full_Actuation' / 'RealtimeController' / 'main_realtime.py')
+        candidates.append(share_dir / 'RealtimeController' / 'main_realtime.py')
+    except Exception:
+        pass
+
+    # 2. Package lib directory
+    try:
+        from ament_index_python.packages import get_package_prefix
+        prefix = Path(get_package_prefix('min-jerk-flatness-planning'))
+        candidates.append(prefix / 'lib' / 'min-jerk-flatness-planning' / 'main_realtime.py')
+    except Exception:
+        pass
+
+    # 3. Same directory as this script
+    this_dir = Path(__file__).resolve().parent
+    candidates.append(this_dir / 'main_realtime.py')
+
+    # 4. Source workspace directory
+    candidates.append(Path('/home/brayan/ros2_ws/src/min-jerk-flatness-planning/Fictitious-Input_Full_Actuation/RealtimeController/main_realtime.py'))
+    try:
+        ws_root = this_dir.parents[3]
+        candidates.append(ws_root / 'src' / 'min-jerk-flatness-planning' / 'Fictitious-Input_Full_Actuation' / 'RealtimeController' / 'main_realtime.py')
+    except Exception:
+        pass
+
+    for cand in candidates:
+        if cand and cand.is_file():
+            return cand.resolve()
+
+    return this_dir / 'main_realtime.py'
+
 class Case3PlannerNode(Node):
     def __init__(self):
         super().__init__(
@@ -79,10 +117,11 @@ class Case3PlannerNode(Node):
         self.get_logger().info(
             f'Initial pose received: x={self.current_x:.2f}m, y={self.current_y:.2f}m, '
             f'psi={math.degrees(self.current_yaw):.1f}deg, u={self.current_u:.2f}m/s. '
-            f'Running Case 3 NLP Trajectory Planner...'
+            f'Running Case 3 Python QP Trajectory Planner...'
         )
 
-        script_path = Path(__file__).resolve().parent / 'main_realtime.py'
+        script_path = find_main_realtime_script()
+        self.get_logger().info(f'Using main_realtime.py at: {script_path}')
         ref_csv = self.output_dir / 'planned_trajectory_reference.csv'
         metrics_json = self.output_dir / 'planning_metrics.json'
 
@@ -94,7 +133,7 @@ class Case3PlannerNode(Node):
         ]
 
         env = os.environ.copy()
-        realtime_dir = Path(__file__).resolve().parent
+        realtime_dir = script_path.parent
         case3_dir = realtime_dir.parent
         env['PYTHONPATH'] = str(realtime_dir) + os.pathsep + str(case3_dir) + os.pathsep + env.get('PYTHONPATH', '')
 

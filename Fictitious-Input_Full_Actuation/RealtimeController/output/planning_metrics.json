@@ -1,16 +1,17 @@
 {
-    "case": "Case 3 Realtime",
-    "solver_type": "CasADi NLP (IPOPT) seeded from live pose",
-    "tiempo_qp_ms": 704.2661600025895,
-    "tiempo_planitud_ms": 28.695644999970682,
-    "tiempo_total_ms": 732.9618050025601,
-    "solve_time_ms": 732.9618050025601,
-    "total_sim_time_s": 115.5,
+    "case": "Case 3 Realtime (Python)",
+    "solver_type": "QP (6-Param Model in Python)",
+    "QP Planning Time": "220.18263 ms",
+    "Flatness Reconstruction Time": "55.33514 ms",
+    "Total Time": "275.51776 ms",
+    "tiempo_qp_ms": 220.1826250002341,
+    "tiempo_planitud_ms": 55.33513599948492,
+    "tiempo_total_ms": 275.51776099971903,
+    "duration_s": 115.5,
     "num_samples": 3466,
-    "x0": 0.000163,
-    "y0": 0.0,
-    "psi0": 0.0,
-    "u0": -3.6e-05,
-    "v0": -0.0,
-    "r0": 0.0
+    "planning_time_ms": {
+        "qp_solve_ms": 220.1826250002341,
+        "flatness_reconstruction_ms": 55.33513599948492,
+        "total_planning_ms": 275.51776099971903
+    }
 }

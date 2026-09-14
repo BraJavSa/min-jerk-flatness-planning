@@ -8,7 +8,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from usv_params import DT_SIM, T_MAX, T_MIN
-from trajectory_nlp import FlatnessNLP
+from min_jerk_qp import MinJerkQP
 from flatness_reconstruct import reconstruct_flatness_full
 
 plt.rcParams['font.sans-serif'] = 'DejaVu Sans'
@@ -32,21 +32,22 @@ def main():
     dir_f_unit = dir_f / np.linalg.norm(dir_f)
     vf_vec = tuple(0.01 * dir_f_unit)
     EPSILON_TV = 0.1
+
     t_start = time.perf_counter()
-    planner = FlatnessNLP(waypoints, times, vel_start=v0_vec, vel_end=vf_vec, epsilon=EPSILON_TV)
+    planner = MinJerkQP(waypoints, times, vel_start=v0_vec, vel_end=vf_vec)
     t_sim, pos, vel, acc, jerk = planner.sample(dt_sim=DT_SIM)
-    nlp_time_ms = (time.perf_counter() - t_start) * 1000.0
+    qp_time_ms = (time.perf_counter() - t_start) * 1000.0
 
     t_fl0 = time.perf_counter()
     flat_data = reconstruct_flatness_full(pos, vel, acc, jerk, t_sim)
     flatness_time_ms = (time.perf_counter() - t_fl0) * 1000.0
-    total_time_ms = nlp_time_ms + flatness_time_ms
+    total_time_ms = qp_time_ms + flatness_time_ms
 
     print("==================================================")
-    print("CASE 3 - CasADi NLP Planning + Exact 6-Param Flatness Reconstruction")
+    print("CASE 3 - Python QP Planning + Exact 6-Param Flatness Reconstruction")
     print("--------------------------------------------------")
     print(f"Samples:                       {len(t_sim)} (dt = {DT_SIM:.5f} s, T = {t_sim[-1] - t_sim[0]:.3f} s)")
-    print(f"NLP Planning Time:             {nlp_time_ms:.5f} ms")
+    print(f"QP Planning Time:              {qp_time_ms:.5f} ms")
     print(f"Flatness Reconstruction Time:  {flatness_time_ms:.5f} ms")
     print(f"Total Time:                    {total_time_ms:.5f} ms")
     print("==================================================")
@@ -59,11 +60,11 @@ def main():
     
     planning_metrics = {
         "case": "Case 3",
-        "solver_type": "CasADi NLP (IPOPT)",
-        "NLP Planning Time": f"{nlp_time_ms:.5f} ms",
+        "solver_type": "QP (6-Param Model in Python)",
+        "QP Planning Time": f"{qp_time_ms:.5f} ms",
         "Flatness Reconstruction Time": f"{flatness_time_ms:.5f} ms",
         "Total Time": f"{total_time_ms:.5f} ms",
-        "tiempo_qp_ms": float(nlp_time_ms),
+        "tiempo_qp_ms": float(qp_time_ms),
         "tiempo_planitud_ms": float(flatness_time_ms),
         "tiempo_total_ms": float(total_time_ms),
         "solve_time_ms": float(total_time_ms),

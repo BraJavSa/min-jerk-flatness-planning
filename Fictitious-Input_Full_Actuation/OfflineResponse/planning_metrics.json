@@ -1,13 +1,13 @@
 {
     "case": "Case 3",
-    "solver_type": "CasADi NLP (IPOPT)",
-    "NLP Planning Time": "650.27008 ms",
-    "Flatness Reconstruction Time": "26.38225 ms",
-    "Total Time": "676.65233 ms",
-    "tiempo_qp_ms": 650.2700769997318,
-    "tiempo_planitud_ms": 26.382248997833813,
-    "tiempo_total_ms": 676.6523259975656,
-    "solve_time_ms": 676.6523259975656,
+    "solver_type": "QP (6-Param Model in Python)",
+    "QP Planning Time": "4.17394 ms",
+    "Flatness Reconstruction Time": "25.05162 ms",
+    "Total Time": "29.22555 ms",
+    "tiempo_qp_ms": 4.173937999439659,
+    "tiempo_planitud_ms": 25.051615999473142,
+    "tiempo_total_ms": 29.2255539989128,
+    "solve_time_ms": 29.2255539989128,
     "total_sim_time_s": 115.5,
     "num_samples": 3466
 }

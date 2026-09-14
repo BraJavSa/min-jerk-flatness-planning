@@ -1,11 +1,11 @@
 {
     "case": "Case 1 Realtime (C)",
     "solver_type": "QP (5-Param Model)",
-    "Tiempo QP (planificacion)": "0.22456 ms",
-    "Tiempo reconstruccion planitud": "0.74262 ms",
-    "Tiempo total": "0.96718 ms",
-    "tiempo_qp_ms": 0.22456,
-    "tiempo_planitud_ms": 0.74262,
-    "tiempo_total_ms": 0.96718,
+    "QP Planning Time": "0.22719 ms",
+    "Flatness Reconstruction Time": "0.76344 ms",
+    "Total Time": "0.99063 ms",
+    "tiempo_qp_ms": 0.22719,
+    "tiempo_planitud_ms": 0.76344,
+    "tiempo_total_ms": 0.99063,
     "num_samples": 3466
 }

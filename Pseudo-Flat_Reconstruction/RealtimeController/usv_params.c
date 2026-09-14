@@ -10,17 +10,19 @@ const double Yv_9  = 42.20370985895385;
 const double Yvv_9 = 0.7067569214632512;
 const double Nr_9  = 4.940560878487763;
 const double Nrr_9 = 3.1501144317267036;
-const double dP_9  = 0.26;
+const double dP_9  = 0.29;
+
+const double SURGE_GAIN = 2.0;
+const double YAW_ARM = 0.29;
 
 const double SAMPLE_RATE_HZ = 30.0;
 const double DT_SIM = 1.0 / 30.0;
 
-const double A_POS = -12.07098855, K_POS = 73.72259622, B_POS = 14.20242467;
-const double M_POS = 0.99474311,   V_POS = 6.83239913,  C_POS = 1.0;
-const double A_NEG = -70.9610860,  K_NEG = 7.47710923,  B_NEG = 2.69365001;
-const double M_NEG = -3.79303820,  V_NEG = 4.09908178e-04, C_NEG = 1.0;
-const double T_MAX = 65.92;
-const double T_MIN = -49.38;
+// T200 thruster model (exact parameters)
+const double A_POS = 1e-06, K_POS = 40.0209, B_POS = 2.6249, V_POS = 0.1615, C_POS = 0.9432, M_POS = 1e-05;
+const double A_NEG = -31.4990, K_NEG = -1e-05, B_NEG = 3.6986, V_NEG = 0.3264, C_NEG = 0.9713, M_NEG = -1.0;
+const double T_MAX = 36.3827;
+const double T_MIN = -28.4393;
 
 double thrust_from_cmd_richards(double cmd)
 {

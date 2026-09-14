@@ -29,7 +29,7 @@ _setup_import_paths()
 
 from usv_params import (
     m11_real, m22_real, m33_real, Xu_real, Yv_real, Nr_real,
-    dP, T_MAX, T_MIN, cmd_from_thrust_richards, thrust_from_cmd_richards
+    dP, SURGE_GAIN, YAW_ARM, T_MAX, T_MIN, cmd_from_thrust_richards, thrust_from_cmd_richards
 )
 
 def wrap_to_pi(angle: float) -> float:
@@ -37,10 +37,12 @@ def wrap_to_pi(angle: float) -> float:
 
 @dataclass
 class NmpcWeights:
-    q_pos: float = 250.0
-    q_yaw: float = 45.0
-    q_u: float = 2.0
-    w_jerk: float = 1e-4
+    q_pos: float = 50.0
+    q_yaw: float = 20.0
+    q_u: float = 1.0
+    q_r: float = 3.0
+    w_jerk: float = 0.0
+    r_tau: float = 1e-3
 
 class NmpcFlatness:
     NX = 6
@@ -112,6 +114,9 @@ class NmpcFlatness:
         self.P_yref = self.opti.parameter(self.n_colloc)
         self.P_psiref = self.opti.parameter(self.n_colloc)
         self.P_uref = self.opti.parameter(self.n_colloc)
+        self.P_rref = self.opti.parameter(self.n_colloc)
+        self.P_turef = self.opti.parameter(self.n_colloc)
+        self.P_trref = self.opti.parameter(self.n_colloc)
 
         x = ca.mtimes(self.B0_ca, Px)
         y = ca.mtimes(self.B0_ca, Py)
@@ -137,8 +142,8 @@ class NmpcFlatness:
         tau_v = m22_real * dv + m11_real * u * r + Yv_real * v
         tau_r = m33_real * dr - (m11_real - m22_real) * u * v + Nr_real * r
 
-        self.T1 = 0.5 * (tau_u + tau_r / dP)
-        self.T2 = 0.5 * (tau_u - tau_r / dP)
+        self.T1 = 0.5 * (tau_u / SURGE_GAIN + tau_r / (2.0 * YAW_ARM))
+        self.T2 = 0.5 * (tau_u / SURGE_GAIN - tau_r / (2.0 * YAW_ARM))
         self.tau_u = tau_u
         self.tau_v = tau_v
         self.tau_r = tau_r
@@ -162,16 +167,20 @@ class NmpcFlatness:
         err_pos = ca.sumsqr(x - self.P_xref) + ca.sumsqr(y - self.P_yref)
         err_yaw = ca.sumsqr(psi - self.P_psiref)
         err_u   = ca.sumsqr(u - self.P_uref)
-
-        jx = ca.mtimes(self.B3_ca, Px)
-        jy = ca.mtimes(self.B3_ca, Py)
-        jpsi = ca.mtimes(self.B3_ca, Ppsi)
-        cost_jerk = self.w.w_jerk * (ca.sumsqr(jx) + ca.sumsqr(jy) + 5.0 * ca.sumsqr(jpsi))
+        err_r   = ca.sumsqr(r - self.P_rref)
+        err_tau = ca.sumsqr(self.tau_u - self.P_turef) + ca.sumsqr(self.tau_r - self.P_trref)
 
         cost = (self.w.q_pos * err_pos +
                 self.w.q_yaw * err_yaw +
                 self.w.q_u * err_u +
-                cost_jerk)
+                self.w.q_r * err_r)
+        if self.w.r_tau > 0.0:
+            cost = cost + self.w.r_tau * err_tau
+        if self.w.w_jerk > 0.0:
+            jx = ca.mtimes(self.B3_ca, Px)
+            jy = ca.mtimes(self.B3_ca, Py)
+            jpsi = ca.mtimes(self.B3_ca, Ppsi)
+            cost = cost + self.w.w_jerk * (ca.sumsqr(jx) + ca.sumsqr(jy) + 5.0 * ca.sumsqr(jpsi))
         self.opti.minimize(cost)
 
         p_opts = {"expand": True, "print_time": False}
@@ -196,7 +205,8 @@ class NmpcFlatness:
     def solve(self, x0: np.ndarray,
               eta_ref: np.ndarray,
               nu_ref: np.ndarray,
-              u_prev: np.ndarray = None):
+              u_prev: np.ndarray = None,
+              tau_ref: np.ndarray = None):
         t0 = time.perf_counter()
 
         n_avail = len(eta_ref)
@@ -205,6 +215,14 @@ class NmpcFlatness:
         xref_col = np.interp(self.t_colloc, t_ref, eta_ref[:, 0])
         yref_col = np.interp(self.t_colloc, t_ref, eta_ref[:, 1])
         uref_col = np.interp(self.t_colloc, t_ref, nu_ref[:, 0])
+        rref_col = np.interp(self.t_colloc, t_ref, nu_ref[:, 2])
+
+        if tau_ref is not None:
+            turef_col = np.interp(self.t_colloc, t_ref, tau_ref[:, 0])
+            trref_col = np.interp(self.t_colloc, t_ref, tau_ref[:, 1])
+        else:
+            turef_col = np.zeros(self.n_colloc)
+            trref_col = np.zeros(self.n_colloc)
 
         psi_r0 = float(eta_ref[0, 2])
         dpsi_curr = wrap_to_pi(float(x0[2]) - psi_r0)
@@ -227,6 +245,9 @@ class NmpcFlatness:
         self.opti.set_value(self.P_yref, yref_col)
         self.opti.set_value(self.P_psiref, psiref_col)
         self.opti.set_value(self.P_uref, uref_col)
+        self.opti.set_value(self.P_rref, rref_col)
+        self.opti.set_value(self.P_turef, turef_col)
+        self.opti.set_value(self.P_trref, trref_col)
 
         if self.P_prev is not None:
             self.opti.set_initial(self.P, self.P_prev)

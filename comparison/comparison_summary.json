@@ -1,9 +1,9 @@
 {
     "case1": {
         "case": "Mass Symmetry",
-        "planning_ms": 0.13806,
-        "reconstruction_ms": 0.51264,
-        "total_time_ms": 0.6507
+        "planning_ms": 0.15237,
+        "reconstruction_ms": 0.61216,
+        "total_time_ms": 0.76454
     },
     "case2": {
         "case": "Pseudo-Flatness",
@@ -13,8 +13,8 @@
     },
     "case3": {
         "case": "Fictitious-Input",
-        "planning_ms": 650.2700769997318,
-        "reconstruction_ms": 26.382248997833813,
-        "total_time_ms": 676.6523259975656
+        "planning_ms": 4.173937999439659,
+        "reconstruction_ms": 25.051615999473142,
+        "total_time_ms": 29.2255539989128
     }
 }

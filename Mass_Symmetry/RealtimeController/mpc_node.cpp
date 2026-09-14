@@ -77,7 +77,7 @@ public:
             std::bind(&Case1MpcNode::controlLoop, this));
 
         RCLCPP_INFO(this->get_logger(),
-                    "Case 1 MPC Node initialized (Horizon N=%d, dt=%.4f s, Q=diag(200,200,200,1,1,5)). "
+                    "Case 1 MPC Node initialized (5-Param Mass Symmetry Pure Flatness MPC, Horizon N=%d, dt=%.4f s). "
                     "Waiting for reference trajectory and odometry...",
                     NmpcFlatness::N, dt_);
     }
@@ -222,17 +222,20 @@ private:
         };
 
         std::vector<std::array<double, 3>> eta_ref, nu_ref;
+        std::vector<std::array<double, 2>> tau_ref;
         eta_ref.reserve(NmpcFlatness::N);
         nu_ref.reserve(NmpcFlatness::N);
+        tau_ref.reserve(NmpcFlatness::N);
         for (int k = 0; k < NmpcFlatness::N; k++) {
             size_t idx = std::min(step_idx_ + static_cast<size_t>(k), ref_.size() - 1);
             eta_ref.push_back({ref_[idx].x, ref_[idx].y, ref_[idx].psi});
             nu_ref.push_back({ref_[idx].u, ref_[idx].v, ref_[idx].r});
+            tau_ref.push_back({ref_[idx].tau_u, ref_[idx].tau_r});
         }
 
         double solve_ms = 0.0;
         std::array<double, NmpcFlatness::NU> u_opt =
-            nmpc_->solve(x0, eta_ref, nu_ref, u_prev_, &solve_ms);
+            nmpc_->solve(x0, eta_ref, nu_ref, u_prev_, &solve_ms, tau_ref);
         u_prev_ = u_opt;
 
         double T1 = u_opt[0], T2 = u_opt[1];
@@ -361,7 +364,7 @@ private:
         std::ofstream jf(json_path);
         if (jf.is_open()) {
             jf << "{\n"
-               << "    \"case\": \"Case 1 (ROS2 Realtime MPC, N=30, Q=diag(200,200,200,1,1,5))\",\n"
+               << "    \"case\": \"Case 1 (Mass Symmetry 5-Param Pure Flatness Receding-Horizon NLP MPC, N=30)\",\n"
                << "    \"horizon_steps\": " << NmpcFlatness::N << ",\n"
                << "    \"samples_executed\": " << log_t_.size() << ",\n"
                << "    \"duration_s\": " << log_t_.back() << ",\n"

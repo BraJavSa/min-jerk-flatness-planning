@@ -1,9 +1,9 @@
 {
     "case": "Case 2 (ROS2 Realtime MPC, N=10, Q=diag(200,200,200,1,1,5))",
-    "samples_executed": 3414,
-    "duration_s": 113.768,
+    "samples_executed": 3439,
+    "duration_s": 114.6,
     "tracking_error": {
-        "rmse_position_m": 0.14361034570170722,
-        "max_position_error_m": 0.219429
+        "rmse_position_m": 0.01317627620448012,
+        "max_position_error_m": 0.032595
     }
 }

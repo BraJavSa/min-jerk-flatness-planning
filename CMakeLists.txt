@@ -39,6 +39,16 @@ install(PROGRAMS
   DESTINATION lib/${PROJECT_NAME}
   RENAME case1_mpc_plot
 )
+install(PROGRAMS
+  Mass_Symmetry/RealtimeController/mpc_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME mass_symmetry_mpc_node_py
+)
+install(PROGRAMS
+  Mass_Symmetry/RealtimeController/mpc_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME case1_mpc_node_py
+)
 
 install(PROGRAMS
   Pseudo-Flat_Reconstruction/RealtimeController/planner_node.py
@@ -70,6 +80,16 @@ install(PROGRAMS
   DESTINATION lib/${PROJECT_NAME}
   RENAME case2_mpc_plot
 )
+install(PROGRAMS
+  Pseudo-Flat_Reconstruction/RealtimeController/mpc_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME pseudo_flat_mpc_node_py
+)
+install(PROGRAMS
+  Pseudo-Flat_Reconstruction/RealtimeController/mpc_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME case2_mpc_node_py
+)
 
 install(PROGRAMS
   Fictitious-Input_Full_Actuation/RealtimeController/planner_node.py
@@ -82,14 +102,21 @@ install(PROGRAMS
   RENAME case3_mpc_planner
 )
 install(PROGRAMS
-  Fictitious-Input_Full_Actuation/RealtimeController/mpc_node.py
+  Fictitious-Input_Full_Actuation/RealtimeController/main_realtime.py
+  Fictitious-Input_Full_Actuation/RealtimeController/min_jerk_qp.py
+  Fictitious-Input_Full_Actuation/RealtimeController/flatness_reconstruct.py
+  Fictitious-Input_Full_Actuation/RealtimeController/usv_params.py
   DESTINATION lib/${PROJECT_NAME}
-  RENAME fictitious_input_mpc_node
 )
 install(PROGRAMS
   Fictitious-Input_Full_Actuation/RealtimeController/mpc_node.py
   DESTINATION lib/${PROJECT_NAME}
-  RENAME case3_mpc_node
+  RENAME fictitious_input_mpc_node_py
+)
+install(PROGRAMS
+  Fictitious-Input_Full_Actuation/RealtimeController/mpc_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME case3_mpc_node_py
 )
 install(PROGRAMS
   Fictitious-Input_Full_Actuation/RealtimeController/recorder_node.py
@@ -152,7 +179,7 @@ add_executable(mass_symmetry_mpc_node
   Mass_Symmetry/RealtimeController/usv_params.c
   Mass_Symmetry/RealtimeController/flatness_reconstruct.c
 )
-target_include_directories(mass_symmetry_mpc_node PRIVATE Mass_Symmetry/RealtimeController)
+target_include_directories(mass_symmetry_mpc_node PRIVATE Mass_Symmetry/RealtimeController ${casadi_INCLUDE_DIRS})
 ament_target_dependencies(mass_symmetry_mpc_node rclcpp std_msgs nav_msgs)
 target_link_libraries(mass_symmetry_mpc_node casadi m)
 target_compile_features(mass_symmetry_mpc_node PRIVATE cxx_std_17)
@@ -163,7 +190,7 @@ add_executable(case1_mpc_node
   Mass_Symmetry/RealtimeController/usv_params.c
   Mass_Symmetry/RealtimeController/flatness_reconstruct.c
 )
-target_include_directories(case1_mpc_node PRIVATE Mass_Symmetry/RealtimeController)
+target_include_directories(case1_mpc_node PRIVATE Mass_Symmetry/RealtimeController ${casadi_INCLUDE_DIRS})
 ament_target_dependencies(case1_mpc_node rclcpp std_msgs nav_msgs)
 target_link_libraries(case1_mpc_node casadi m)
 target_compile_features(case1_mpc_node PRIVATE cxx_std_17)
@@ -175,7 +202,7 @@ add_executable(pseudo_flat_mpc_node
   Pseudo-Flat_Reconstruction/RealtimeController/flatness_reconstruct.c
   Pseudo-Flat_Reconstruction/RealtimeController/sqp_optimizer.c
 )
-target_include_directories(pseudo_flat_mpc_node PRIVATE Pseudo-Flat_Reconstruction/RealtimeController)
+target_include_directories(pseudo_flat_mpc_node PRIVATE Pseudo-Flat_Reconstruction/RealtimeController ${casadi_INCLUDE_DIRS})
 ament_target_dependencies(pseudo_flat_mpc_node rclcpp std_msgs nav_msgs)
 target_link_libraries(pseudo_flat_mpc_node casadi m)
 target_compile_features(pseudo_flat_mpc_node PRIVATE cxx_std_17)
@@ -187,10 +214,30 @@ add_executable(case2_mpc_node
   Pseudo-Flat_Reconstruction/RealtimeController/flatness_reconstruct.c
   Pseudo-Flat_Reconstruction/RealtimeController/sqp_optimizer.c
 )
-target_include_directories(case2_mpc_node PRIVATE Pseudo-Flat_Reconstruction/RealtimeController)
+target_include_directories(case2_mpc_node PRIVATE Pseudo-Flat_Reconstruction/RealtimeController ${casadi_INCLUDE_DIRS})
 ament_target_dependencies(case2_mpc_node rclcpp std_msgs nav_msgs)
 target_link_libraries(case2_mpc_node casadi m)
 target_compile_features(case2_mpc_node PRIVATE cxx_std_17)
+
+add_executable(fictitious_input_mpc_node
+  Fictitious-Input_Full_Actuation/RealtimeController/mpc_node.cpp
+  Fictitious-Input_Full_Actuation/RealtimeController/nmpc_flatness.cpp
+  Fictitious-Input_Full_Actuation/RealtimeController/usv_params.c
+)
+target_include_directories(fictitious_input_mpc_node PRIVATE Fictitious-Input_Full_Actuation/RealtimeController ${casadi_INCLUDE_DIRS})
+ament_target_dependencies(fictitious_input_mpc_node rclcpp std_msgs nav_msgs)
+target_link_libraries(fictitious_input_mpc_node casadi m)
+target_compile_features(fictitious_input_mpc_node PRIVATE cxx_std_17)
+
+add_executable(case3_mpc_node
+  Fictitious-Input_Full_Actuation/RealtimeController/mpc_node.cpp
+  Fictitious-Input_Full_Actuation/RealtimeController/nmpc_flatness.cpp
+  Fictitious-Input_Full_Actuation/RealtimeController/usv_params.c
+)
+target_include_directories(case3_mpc_node PRIVATE Fictitious-Input_Full_Actuation/RealtimeController ${casadi_INCLUDE_DIRS})
+ament_target_dependencies(case3_mpc_node rclcpp std_msgs nav_msgs)
+target_link_libraries(case3_mpc_node casadi m)
+target_compile_features(case3_mpc_node PRIVATE cxx_std_17)
 
 install(TARGETS
   mass_symmetry_c_planner
@@ -201,6 +248,8 @@ install(TARGETS
   case1_mpc_node
   pseudo_flat_mpc_node
   case2_mpc_node
+  fictitious_input_mpc_node
+  case3_mpc_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
