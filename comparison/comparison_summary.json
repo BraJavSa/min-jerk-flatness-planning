@@ -4,14 +4,14 @@
         "total_planning_ms": 0.99063,
         "mean_mpc_ms": 7.12837
     },
-    "case2": {
-        "case": "Pseudo-Flatness",
-        "total_planning_ms": 2.46301,
-        "mean_mpc_ms": 6.46336
-    },
     "case3": {
         "case": "Fictitious-Input",
         "total_planning_ms": 275.51776099971903,
         "mean_mpc_ms": 10.6719
+    },
+    "case2": {
+        "case": "Pseudo-Flatness",
+        "total_planning_ms": 2.46301,
+        "mean_mpc_ms": 6.46336
     }
 }

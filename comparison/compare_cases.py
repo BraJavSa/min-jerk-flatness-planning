@@ -17,14 +17,14 @@ CASES = [
         'dir': FLATNESS_DIR / 'Mass_Symmetry' / 'RealtimeController' / 'output',
     },
     {
-        'key': 'case2',
-        'label': 'Pseudo-Flatness',
-        'dir': FLATNESS_DIR / 'Pseudo-Flat_Reconstruction' / 'RealtimeController' / 'output',
-    },
-    {
         'key': 'case3',
         'label': 'Fictitious-Input',
         'dir': FLATNESS_DIR / 'Fictitious-Input_Full_Actuation' / 'RealtimeController' / 'output',
+    },
+    {
+        'key': 'case2',
+        'label': 'Pseudo-Flatness',
+        'dir': FLATNESS_DIR / 'Pseudo-Flat_Reconstruction' / 'RealtimeController' / 'output',
     }
 ]
 
