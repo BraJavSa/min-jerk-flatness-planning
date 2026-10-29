@@ -1,0 +1,140 @@
+{
+    "case1": {
+        "case_name": "Case 1: Mass Symmetry",
+        "short_name": "Mass Symmetry",
+        "samples_executed": 3441,
+        "duration_s": 114.668,
+        "position_tracking_error_m": {
+            "rmse_m": 0.0840818118775571,
+            "mean_m": 0.08161403623554438,
+            "max_m": 0.11386917500798678,
+            "std_m": 0.02022128032435508,
+            "final_m": 0.00619228108212023
+        },
+        "heading_tracking_error": {
+            "rmse_deg": 0.512451411358851,
+            "max_deg": 1.0176876357113585,
+            "rmse_rad": 0.008943964384703818
+        },
+        "velocity_tracking_rmse": {
+            "u_rmse_mps": 0.009458265849016781,
+            "v_rmse_mps": 0.00103857406563012,
+            "r_rmse_radps": 0.0015716496641003256
+        },
+        "actuation_discrepancy_applied_vs_planned": {
+            "tau_u_surge_N": {
+                "rmse_N": 7.615472288108937,
+                "mae_N": 7.440668610578321,
+                "max_abs_N": 9.815280000000001,
+                "mean_N": -7.410511919500145,
+                "std_N": 1.7549163119366813
+            },
+            "tau_r_yaw_Nm": {
+                "rmse_Nm": 0.22346314193034056,
+                "mae_Nm": 0.1830962781168265,
+                "max_abs_Nm": 0.5522159999999999,
+                "mean_Nm": 0.09702304940424293,
+                "std_Nm": 0.20130152430044182
+            }
+        },
+        "realtime_computation_timing_ms": {
+            "mean_ms": 7.115579394071491,
+            "p95_ms": 9.160776,
+            "max_ms": 12.856853,
+            "control_period_budget_ms": 33.333333333333336,
+            "headroom_margin_pct": 78.65326181778552
+        }
+    },
+    "case2": {
+        "case_name": "Case 2: Pseudo-Flatness",
+        "short_name": "Pseudo-Flatness",
+        "samples_executed": 3439,
+        "duration_s": 114.6,
+        "position_tracking_error_m": {
+            "rmse_m": 0.013176275688769595,
+            "mean_m": 0.01175554079433241,
+            "max_m": 0.03259533126077956,
+            "std_m": 0.0059515965638849335,
+            "final_m": 0.0036419459084379114
+        },
+        "heading_tracking_error": {
+            "rmse_deg": 0.12035290441577015,
+            "max_deg": 0.35781214305918957,
+            "rmse_rad": 0.0021005544463932116
+        },
+        "velocity_tracking_rmse": {
+            "u_rmse_mps": 0.007282592861233895,
+            "v_rmse_mps": 0.0008983400743660388,
+            "r_rmse_radps": 0.0010010243263518827
+        },
+        "actuation_discrepancy_applied_vs_planned": {
+            "tau_u_surge_N": {
+                "rmse_N": 3.4850263651601407,
+                "mae_N": 3.359560172724629,
+                "max_abs_N": 6.044411999999998,
+                "mean_N": -3.3403210165745856,
+                "std_N": 0.9938129965398059
+            },
+            "tau_r_yaw_Nm": {
+                "rmse_Nm": 0.06873932945046034,
+                "mae_Nm": 0.053279495492875834,
+                "max_abs_Nm": 0.262734,
+                "mean_Nm": 0.01764202762430939,
+                "std_Nm": 0.06643684425529278
+            }
+        },
+        "realtime_computation_timing_ms": {
+            "mean_ms": 6.453314949694678,
+            "p95_ms": 8.056430500000001,
+            "max_ms": 12.841166,
+            "control_period_budget_ms": 33.333333333333336,
+            "headroom_margin_pct": 80.64005515091597
+        }
+    },
+    "case3": {
+        "case_name": "Case 3: Fictitious-Input",
+        "short_name": "Fictitious-Input",
+        "samples_executed": 3418,
+        "duration_s": 113.9,
+        "position_tracking_error_m": {
+            "rmse_m": 0.08507605896029703,
+            "mean_m": 0.08247518595672902,
+            "max_m": 0.11338768784131652,
+            "std_m": 0.02087533256307273,
+            "final_m": 0.005449445109368065
+        },
+        "heading_tracking_error": {
+            "rmse_deg": 0.572421586239573,
+            "max_deg": 1.2724819672060534,
+            "rmse_rad": 0.009990641389369215
+        },
+        "velocity_tracking_rmse": {
+            "u_rmse_mps": 0.014229026283214274,
+            "v_rmse_mps": 0.0028844803642286824,
+            "r_rmse_radps": 0.0018311066727172162
+        },
+        "actuation_discrepancy_applied_vs_planned": {
+            "tau_u_surge_N": {
+                "rmse_N": 14.406680642638966,
+                "mae_N": 13.919723094499707,
+                "max_abs_N": 20.143405,
+                "mean_N": -13.919723094499707,
+                "std_N": 3.713994629969157
+            },
+            "tau_r_yaw_Nm": {
+                "rmse_Nm": 0.40358984163042966,
+                "mae_Nm": 0.32169204125219425,
+                "max_abs_Nm": 0.9517620000000001,
+                "mean_Nm": 0.1526421658864833,
+                "std_Nm": 0.3736109332725136
+            }
+        },
+        "realtime_computation_timing_ms": {
+            "mean_ms": 10.346825271503805,
+            "p95_ms": 13.301213949999998,
+            "max_ms": 35.802281,
+            "control_period_budget_ms": 33.333333333333336,
+            "headroom_margin_pct": 68.95952418548859
+        }
+    }
+}
